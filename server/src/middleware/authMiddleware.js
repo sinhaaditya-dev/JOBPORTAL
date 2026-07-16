@@ -49,7 +49,7 @@ const authorizeRecruiter = (req, res, next) => {
   }
   next();
 }
-
+// Authorize student middleware
 const authorizeStudent = (req,res,next) =>{
   if(req.user.role !== "student"){
     return res.status(403).json({

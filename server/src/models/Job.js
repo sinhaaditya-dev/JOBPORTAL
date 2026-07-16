@@ -52,7 +52,17 @@ const JobSchema  = new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:"User",
         required:true
-    }
+    },
+    companyLogo: {
+        public_id: {
+            type: String,
+            default: ""
+        },
+        url: {
+            type: String,
+            default: ""
+        }
+    },
 
 },
 {

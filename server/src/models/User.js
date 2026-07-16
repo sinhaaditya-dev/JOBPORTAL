@@ -21,6 +21,16 @@ const UserSchema = new mongoose.Schema({
         enum: ["student", "recruiter"],
         default: "student",
     },
+    resume: {
+        public_id: {
+            type: String,
+            default: ""
+        },
+        url: {
+            type: String,
+            default: ""
+        }
+    },
 }, 
 {
     timestamps:true

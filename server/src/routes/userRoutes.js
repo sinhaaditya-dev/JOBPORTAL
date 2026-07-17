@@ -1,4 +1,4 @@
-const upload = require('../middleware/uploadMiddleware');
+const upload = require('../middleware/resumeUploadMiddleware');
 const express = require('express');
 const router = express.Router();
 

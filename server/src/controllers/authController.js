@@ -124,9 +124,26 @@ const getProfile = async (req, res) => {
 
   }
 
+}
+
+//Logout User
+const logoutUser = async(req,res) =>{
+    try{
+        return res.status(200).json({
+            success:true,
+            message:"User Logout Successfully"
+        })
+    }
+    catch(error){
+        return res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
 };
 module.exports = {
     registerUser,
     loginUser,
-    getProfile
+    getProfile,
+    logoutUser
 };

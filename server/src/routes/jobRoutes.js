@@ -7,7 +7,7 @@ const {uploadCompanyLogo} = require('../controllers/uploadCompanyLogoController'
 const { updateMany } = require('../models/User');
 
 router.post('/', protect, authorizeRecruiter, createJob);
-router.get('/',getAllJobs);
+router.get('/',getAllJobs); //public API no login required
 router.get("/myjobs", protect, authorizeRecruiter, getMyJobs);
 router.get("/:id", getJobById);
 router.put("/:id", protect, authorizeRecruiter, updateJob)

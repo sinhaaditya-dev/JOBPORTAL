@@ -1,5 +1,4 @@
 const Job = require('../models/Job');
-
 const createJob = async(req,res) =>{
     try{
         const{
@@ -54,12 +53,86 @@ const createJob = async(req,res) =>{
 
 const getAllJobs = async(req,res) =>{
     try{
-        const jobs = await Job.find({
-            isActive:true,
-        }).populate("postedBy", "name email").sort({
-            createdAt:-1
-        });
-        res.status(200).json({
+        const{keyword,location,jobType,experience,minSalary, maxSalary} = req.query
+        const filter = {
+            isActive: true
+        };
+        if(keyword){
+            filter.$or = [
+            {
+                title:{
+                $regex:keyword, //is keyword present in title
+                $options:"i" //lowercase or uppercase both
+                }
+            },
+            {
+                company:{
+                $regex:keyword, //is keyword present in company name
+                $options:"i"
+                }
+            },
+            {
+                skills:{
+                    $regex:keyword, //is keyword present in skills
+                    $options:"i"
+                }
+            }
+            ];
+        }
+        // Location filter
+        if(location){
+            filter.$or = [
+                {
+                    location:{
+                        $regex:location,
+                        $options:"i"
+                    }
+                }
+            ]
+        }
+        // Experience filter
+        if(experience){
+            filter.$or = [
+                {
+                    experience:{
+                        $regex:experience,
+                        $options:"i"
+                    }
+                }
+            ]
+        }
+
+        //JobType filter
+        if(jobType){
+            filter.$or = [
+                {
+                    jobType:{
+                        $regex:jobType,
+                        $options:"i"
+                    }
+                }
+            ]
+        }
+
+        //Salary filter
+        if (minSalary) {
+            filter["salary.min"] = {
+            $gte: Number(minSalary)
+            };
+        }
+
+        if (maxSalary) {
+            filter["salary.max"] = {
+            $lte: Number(maxSalary)
+            };
+        }
+
+        const jobs = await Job.find(filter)
+            .populate("postedBy" , "name email")
+            .sort({
+                createdAt:-1
+            });
+            res.status(200).json({
             success: true,
             count:jobs.length,
             jobs,

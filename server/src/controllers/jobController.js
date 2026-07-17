@@ -53,7 +53,10 @@ const createJob = async(req,res) =>{
 
 const getAllJobs = async(req,res) =>{
     try{
-        const{keyword,location,jobType,experience,minSalary, maxSalary} = req.query
+        const{keyword,location,jobType,experience,minSalary, maxSalary,page,limit} = req.query
+        const pageNumber = Number(page) || 1
+        const limitNumber = Number(limit) || 10
+        const skip = (pageNumber - 1) * limitNumber
         const filter = {
             isActive: true
         };
@@ -80,38 +83,26 @@ const getAllJobs = async(req,res) =>{
             ];
         }
         // Location filter
-        if(location){
-            filter.$or = [
-                {
-                    location:{
-                        $regex:location,
-                        $options:"i"
-                    }
-                }
-            ]
+        if (location) {
+            filter.location = {
+            $regex: location,
+            $options: "i"
+            };
         }
         // Experience filter
         if(experience){
-            filter.$or = [
-                {
-                    experience:{
-                        $regex:experience,
-                        $options:"i"
-                    }
-                }
-            ]
+            filter.experience ={
+                $regex:experience,
+                $options:"i"
+            }
         }
 
         //JobType filter
-        if(jobType){
-            filter.$or = [
-                {
-                    jobType:{
-                        $regex:jobType,
-                        $options:"i"
-                    }
-                }
-            ]
+        if (jobType) {
+            filter.jobType = {
+            $regex: jobType,
+            $options: "i"
+            };
         }
 
         //Salary filter
@@ -127,14 +118,21 @@ const getAllJobs = async(req,res) =>{
             };
         }
 
+        const totalJobs = await Job.countDocuments(filter) //calculate total jobs
+        const totalPages = Math.ceil(totalJobs/limitNumber) //calculate total pages
         const jobs = await Job.find(filter)
             .populate("postedBy" , "name email")
             .sort({
                 createdAt:-1
-            });
+            })
+            .skip(skip)
+            .limit(limitNumber)
             res.status(200).json({
             success: true,
             count:jobs.length,
+            totalJobs,
+            totalPages,
+            currentPage:pageNumber,
             jobs,
         });
     }

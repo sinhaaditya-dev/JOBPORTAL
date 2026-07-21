@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getCompanyLogo } from '../utils/logos';
+import api from '../utils/api';
 import { 
   Briefcase, 
   Users, 
@@ -16,12 +18,14 @@ import {
   CheckCircle2, 
   Sparkles, 
   TrendingUp,
-  FileText
+  FileText,
+  LogOut
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const EmployerDashboard = () => {
-  const { user, jobs, applications, postJob, updateApplicationStatus, updateProfile } = useAuth();
+  const { user, jobs, applications, postJob, updateApplicationStatus, updateProfile, logout } = useAuth();
+  const navigate = useNavigate();
   
   const employerCompany = user.companyName || user.company || 'Stripe';
   
@@ -51,15 +55,43 @@ export const EmployerDashboard = () => {
   const [editWebsite, setEditWebsite] = useState(user.website || 'https://stripe.com');
   const [editDesc, setEditDesc] = useState(user.companyDescription || 'Leading financial infrastructure for the internet.');
   const [showProfileSuccess, setShowProfileSuccess] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
 
   // Get jobs posted by this company
-  const myJobs = jobs.filter(j => j.company.toLowerCase() === employerCompany.toLowerCase());
-  const myJobIds = myJobs.map(j => j.id);
+  const myJobs = jobs.filter(j => 
+    (j.postedBy && (j.postedBy._id === user?.id || j.postedBy === user?.id)) ||
+    j.postedBy === user?.id ||
+    (j.company && j.company.toLowerCase() === employerCompany.toLowerCase())
+  );
+
+  const handleLogoUpload = async (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setLogoUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append('logo', file);
+        if (myJobs.length > 0) {
+          const targetJobId = myJobs[0].id || myJobs[0]._id;
+          await api.put(`/jobs/${targetJobId}/upload-logo`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          updateProfile({ logoName: file.name });
+          alert('Company logo uploaded successfully for job listing!');
+        } else {
+          alert('Please post a job first to upload a company logo.');
+        }
+      } catch (err) {
+        console.error('Logo upload error:', err);
+        alert('Logo upload failed. Please try again.');
+      } finally {
+        setLogoUploading(false);
+      }
+    }
+  };
 
   // Get applications for my jobs
-  const myApplications = applications.filter(app => 
-    app.company.toLowerCase() === employerCompany.toLowerCase() || myJobIds.includes(app.jobId)
-  );
+  const myApplications = applications;
 
   // Filter applications by job selection
   const filteredApps = selectedJobFilter === 'All' 
@@ -71,10 +103,12 @@ export const EmployerDashboard = () => {
     ? filteredApps.find(app => app.id === selectedAppId) 
     : filteredApps[0];
 
-  const handlePostJob = (e) => {
+  const handlePostJob = async (e) => {
     e.preventDefault();
+    console.log("--> [EmployerDashboard.handlePostJob] Post job form submitted");
+
     if (!postTitle || !postSalary || !postLocation || !postDesc) {
-      alert('Please fill out all required fields.');
+      alert('Please fill out all required fields (Job Title, Salary, Location, Description).');
       return;
     }
 
@@ -86,28 +120,40 @@ export const EmployerDashboard = () => {
       title: postTitle,
       company: employerCompany,
       location: postLocation,
+      jobType: postType,
       type: postType,
       salary: postSalary,
       category: postCategory,
+      experience: postExp,
       description: postDesc,
       skills: skillsArray,
       aiMatch: 85
     };
 
-    postJob(jobData);
+    console.log("--> [EmployerDashboard.handlePostJob] Sending jobData to postJob context function:", jobData);
 
-    setPostTitle('');
-    setPostLocation('');
-    setPostSalary('');
-    setPostSkills('');
-    setPostDesc('');
-    setShowPostSuccess(true);
+    try {
+      const savedJob = await postJob(jobData);
+      console.log("--> [EmployerDashboard.handlePostJob] Job saved successfully:", savedJob);
 
-    setTimeout(() => {
-      setShowPostSuccess(false);
-      setActiveTab('manage-jobs');
-    }, 1500);
+      setPostTitle('');
+      setPostLocation('');
+      setPostSalary('');
+      setPostSkills('');
+      setPostDesc('');
+      setShowPostSuccess(true);
+
+      setTimeout(() => {
+        setShowPostSuccess(false);
+        setActiveTab('manage-jobs');
+      }, 1500);
+    } catch (err) {
+      console.error("--> [EmployerDashboard.handlePostJob] Error posting job:", err);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to post job. Please try again.';
+      alert(`Job Post Failed: ${errorMessage}`);
+    }
   };
+
 
   const handleShortlist = (appId) => {
     updateApplicationStatus(
@@ -165,7 +211,7 @@ export const EmployerDashboard = () => {
   ];
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen w-full">
       {/* Background Glows */}
       <div className="bg-glow bg-glow-right bg-emerald-500/10"></div>
       <div className="bg-glow bg-glow-left bg-teal-500/10"></div>
@@ -185,9 +231,21 @@ export const EmployerDashboard = () => {
               <p className="text-xs text-slate-400">Review talent pipelines, compile job requirements, and screen applications.</p>
             </div>
           </div>
-          <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/30 px-3 py-1.5 rounded-lg">
-            Role: <strong className="font-bold">{user.title || 'Recruitment Lead'}</strong>
-          </span>
+          <div className="flex items-center space-x-3">
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/30 px-3 py-1.5 rounded-lg">
+              Role: <strong className="font-bold">{user.title || 'Recruitment Lead'}</strong>
+            </span>
+            <button
+              onClick={() => {
+                logout();
+                navigate('/');
+              }}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-900/40 transition-colors cursor-pointer"
+            >
+              <LogOut size={14} />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
 
         {/* Dashboard Grid */}
@@ -885,17 +943,26 @@ export const EmployerDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Logo Drag Uploader Mock */}
+                  {/* Logo Uploader */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-350">Company Brand Logo</label>
-                    <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center bg-white dark:bg-slate-950">
-                      <Upload className="mx-auto text-slate-400 mb-1.5" size={20} />
-                      <span className="text-xs font-semibold text-slate-650 dark:text-slate-300 block">
-                        Drag new corporate logo here or{' '}
-                        <span className="text-emerald-600 dark:text-emerald-450 hover:underline cursor-pointer">browse file</span>
-                      </span>
-                      <span className="text-[10px] text-slate-400 block mt-1">PNG, JPG (Max 2MB)</span>
-                    </div>
+                    <input
+                      type="file"
+                      id="logo-upload-input"
+                      className="hidden"
+                      accept=".png,.jpg,.jpeg"
+                      onChange={handleLogoUpload}
+                      disabled={logoUploading}
+                    />
+                    <label htmlFor="logo-upload-input" className="block cursor-pointer">
+                      <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center bg-white dark:bg-slate-950 hover:border-emerald-500 transition-colors">
+                        <Upload className="mx-auto text-slate-400 mb-1.5" size={20} />
+                        <span className="text-xs font-semibold text-slate-650 dark:text-slate-300 block">
+                          {logoUploading ? 'Uploading logo...' : (user.logoName ? `Current logo: ${user.logoName}` : 'Click to browse new corporate logo')}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-1">PNG, JPG (Max 2MB)</span>
+                      </div>
+                    </label>
                   </div>
 
                   <button

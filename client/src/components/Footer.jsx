@@ -10,12 +10,12 @@ export const Footer = () => {
           
           {/* Brand Info */}
           <div className="md:col-span-1 space-y-4">
-            <Link to="/" className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400 font-bold text-lg">
-              <div className="p-1.5 bg-indigo-600 text-white rounded-lg">
+            <Link to="/" className="flex items-center space-x-2 font-bold text-lg">
+              <div className="p-2 bg-slate-900 dark:bg-zinc-800 text-white rounded-lg shadow-md">
                 <Briefcase size={16} />
               </div>
-              <span className="font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
-                ApexJob AI
+              <span className="font-extrabold text-gradient">
+                ApexJob
               </span>
             </Link>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -118,7 +118,7 @@ export const Footer = () => {
         </div>
 
         <div className="border-t border-slate-200 dark:border-slate-800 mt-8 pt-6 flex flex-col md:flex-row justify-between items-center text-[11px] text-slate-400">
-          <p>© {new Date().getFullYear()} ApexJob AI. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} ApexJob. All rights reserved.</p>
           <div className="flex space-x-4 mt-2 md:mt-0">
             <a href="#" className="hover:text-indigo-500 transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-indigo-500 transition-colors">Terms of Service</a>

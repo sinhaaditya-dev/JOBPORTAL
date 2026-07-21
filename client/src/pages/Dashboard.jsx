@@ -1,7 +1,6 @@
 import { useState, useEffect, Fragment } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { mockJobs, mockNotifications } from '../data/mockData';
 import { Sidebar } from '../components/Sidebar';
 import { EmployerDashboard } from './EmployerDashboard';
 import { ATSScoreCard } from '../components/ATSScoreCard';
@@ -18,14 +17,42 @@ import {
   Bell, 
   Clock, 
   Edit3,
+  LogOut,
   Bookmark,
   Sparkles,
   AlertTriangle
 } from 'lucide-react';
 import { getCompanyLogo } from '../utils/logos';
 
+const defaultNotifications = [
+  {
+    id: 'n1',
+    title: 'Recruiter Viewed Profile',
+    message: 'A recruiter viewed your engineering profile.',
+    time: '2 hours ago',
+    read: false,
+    type: 'view'
+  },
+  {
+    id: 'n2',
+    title: 'New AI Job Match',
+    message: 'We found a high compatibility match for your uploaded resume.',
+    time: '4 hours ago',
+    read: false,
+    type: 'match'
+  },
+  {
+    id: 'n3',
+    title: 'ATS Score Improved',
+    message: 'Your ATS score rose after parsing your skills and credentials.',
+    time: '1 day ago',
+    read: true,
+    type: 'ats'
+  }
+];
+
 export const Dashboard = () => {
-  const { user, savedJobs, updateProfile } = useAuth();
+  const { user, savedJobs, updateProfile, jobs, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedApp, setExpandedApp] = useState(null);
   const navigate = useNavigate();
@@ -45,10 +72,10 @@ export const Dashboard = () => {
   }
 
   // Get matching jobs (AI match >= 80)
-  const matchedJobs = mockJobs.filter(job => job.aiMatch && job.aiMatch >= 80);
+  const matchedJobs = jobs.filter(job => job.aiMatch && job.aiMatch >= 80);
 
   // Get saved jobs details
-  const savedJobsDetails = mockJobs.filter(job => savedJobs.includes(job.id));
+  const savedJobsDetails = jobs.filter(job => savedJobs.includes(job.id));
 
   const hasResume = !!user.resumeName;
   const hasSkills = user.skills && user.skills.length > 0;
@@ -75,7 +102,7 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen w-full">
       {/* Mesh Glow Backgrounds */}
       <div className="bg-glow bg-glow-right"></div>
       <div className="bg-glow bg-glow-left"></div>
@@ -133,15 +160,35 @@ export const Dashboard = () => {
                     </div>
                   </div>
                   
-                  <button className="flex items-center space-x-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-250 dark:border-slate-700 cursor-pointer transition-colors">
-                    <Edit3 size={12} />
-                    <span>Edit Profile</span>
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button 
+                      onClick={() => navigate('/dashboard/profile/edit')}
+                      className="flex items-center space-x-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-250 dark:border-slate-700 cursor-pointer transition-colors"
+                    >
+                      <Edit3 size={12} />
+                      <span>Edit Profile</span>
+                    </button>
+                    <button 
+                      onClick={() => {
+                        logout();
+                        navigate('/');
+                      }}
+                      className="flex items-center space-x-1.5 px-4 py-2 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 cursor-pointer transition-colors"
+                    >
+                      <LogOut size={12} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* ATS Widget Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <ATSScoreCard score={user.atsScore} skills={user.skills} />
+                  <ATSScoreCard 
+                    score={user.atsScore} 
+                    skills={user.skills} 
+                    recommendedSkills={user.recommendedSkills} 
+                    suggestions={user.suggestions} 
+                  />
                   
                   {/* Quick Profile Stats */}
                   <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-5">
@@ -373,7 +420,12 @@ export const Dashboard = () => {
                   <p className="text-xs text-slate-400">Optimize and scan your resume drafts dynamically</p>
                 </div>
 
-                <ATSScoreCard score={user.atsScore} skills={user.skills} />
+                <ATSScoreCard 
+                  score={user.atsScore} 
+                  skills={user.skills} 
+                  recommendedSkills={user.recommendedSkills} 
+                  suggestions={user.suggestions} 
+                />
 
                 <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4">
                   <FileText size={32} className="mx-auto text-indigo-500" />
@@ -456,7 +508,7 @@ export const Dashboard = () => {
                 </div>
 
                 <div className="glass-card rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-850">
-                  {mockNotifications.map((notif) => (
+                  {defaultNotifications.map((notif) => (
                     <div 
                       key={notif.id} 
                       className={`p-4 flex items-start space-x-3.5 transition-colors ${
@@ -470,7 +522,7 @@ export const Dashboard = () => {
                       </div>
                       <div className="flex-1 space-y-1">
                         <div className="flex justify-between items-center">
-                          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{notif.title}</h4>
+                           <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{notif.title}</h4>
                           <span className="text-[10px] text-slate-400 flex items-center">
                             <Clock size={10} className="mr-1" />
                             {notif.time}

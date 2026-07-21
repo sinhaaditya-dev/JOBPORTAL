@@ -1,14 +1,20 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
   Sparkles, 
   Bookmark, 
   AlertTriangle, 
   Bell, 
-  FileText
+  FileText,
+  LogOut
 } from 'lucide-react';
 
 export const Sidebar = ({ activeTab, setActiveTab }) => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
   const menuItems = [
     { id: 'overview', label: 'Dashboard Home', icon: LayoutDashboard },
     { id: 'matches', label: 'AI Job Recommendations', icon: Sparkles, badge: 'New' },
@@ -17,6 +23,11 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
     { id: 'feedback', label: 'Application Feedback', icon: AlertTriangle, alert: true },
     { id: 'notifications', label: 'Notifications', icon: Bell },
   ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <aside className="w-full md:w-64 flex-shrink-0">
@@ -56,6 +67,16 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
             );
           })}
         </ul>
+
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 mt-3">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-3 text-left px-4 py-3 rounded-xl text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all cursor-pointer"
+          >
+            <LogOut size={18} />
+            <span>Sign Out</span>
+          </button>
+        </div>
       </div>
     </aside>
   );

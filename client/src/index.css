@@ -4,31 +4,54 @@
 
 @layer base {
   :root {
-    --primary: 99 102 241; /* #6366f1 (Indigo-500) */
-    --primary-hover: 79 70 229; /* #4f46e5 (Indigo-600) */
-    --accent: 168 85 247; /* #a855f7 (Purple-500) */
-    
+    --primary: 99 102 241;
+    /* #6366f1 (Indigo-500) */
+    --primary-hover: 79 70 229;
+    /* #4f46e5 (Indigo-600) */
+    --accent: 168 85 247;
+    /* #a855f7 (Purple-500) */
+
     /* Light Mode */
-    --bg-base: 245 247 250; /* soft cool slate-100 tint */
+    --bg-base: 245 247 250;
+    /* soft cool slate-100 tint */
     --bg-surface: 255 255 255;
-    --text-base: 71 85 105; /* slate-600 */
-    --text-heading: 15 23 42; /* slate-900 */
-    --border-color: 226 232 240; /* slate-200 */
-    --glass-bg: rgba(255, 255, 255, 0.8); /* frosted white glass */
-    --glass-border: rgba(99, 102, 241, 0.08); /* subtle indigo borders */
+    --text-base: 161 161 170;
+    /* slate-600 */
+    --text-heading: 15 23 42;
+    /* slate-900 */
+    --border-color: 226 232 240;
+    /* slate-200 */
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    /* frosted white glass */
+    --glass-border: rgba(99, 102, 241, 0.08);
+    /* subtle indigo borders */
     --glow-opacity: 0.04;
   }
 
   .dark {
     /* Dark Mode */
-    --bg-base: 0 0 0; /* pure black */
+    --bg-base: 0 0 0;
+    /* pure black */
     --bg-surface: 10 10 10;
-    --text-base: 161 161 170; /* zinc-400 */
-    --text-heading: 244 244 245; /* zinc-100 */
-    --border-color: 24 24 27; /* zinc-900 */
+    --text-base: 161 161 170;
+    /* zinc-400 */
+    --text-heading: 244 244 245;
+    /* zinc-100 */
+    --border-color: 24 24 27;
+    /* zinc-900 */
     --glass-bg: rgba(10, 10, 10, 0.65);
     --glass-border: rgba(255, 255, 255, 0.05);
     --glow-opacity: 0.12;
+  }
+
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    max-width: 100%;
   }
 
   body {
@@ -41,6 +64,18 @@
 }
 
 /* Custom Utilities */
+.text-gradient {
+  background: linear-gradient(135deg, rgb(138, 45, 148) 10%, #4f2f56 50%, #413a43 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .text-gradient {
+  background: linear-gradient(135deg, #515c5c 0%, #313437 50%, #7d7a85 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 .glass-card {
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
@@ -65,7 +100,7 @@
   width: 500px;
   height: 500px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.05) 50%, rgba(0,0,0,0) 70%);
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.05) 50%, rgba(0, 0, 0, 0) 70%);
   filter: blur(60px);
   pointer-events: none;
   z-index: 0;
@@ -103,16 +138,22 @@
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* Keyframes and Animations */
 @keyframes pulseGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.8;
   }
+
   50% {
     opacity: 1;
     transform: scale(1.02);
@@ -125,8 +166,13 @@
 
 /* Dynamic Company Marquee Animation */
 @keyframes marquee {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .animate-marquee {
@@ -142,7 +188,7 @@
 /* Mesh Gradient Background inspired by Stikkle theme */
 .bg-mesh-gradient {
   background-color: #ffffff;
-  background-image: 
+  background-image:
     radial-gradient(at 0% 100%, hsla(339, 85%, 90%, 0.5) 0%, transparent 60%),
     radial-gradient(at 0% 0%, hsla(205, 100%, 93%, 0.5) 0%, transparent 60%),
     radial-gradient(at 100% 0%, hsla(271, 80%, 91%, 0.5) 0%, transparent 60%),
@@ -151,9 +197,25 @@
 
 .dark .bg-mesh-gradient {
   background-color: #0a0a0a;
-  background-image: 
+  background-image:
     radial-gradient(at 0% 100%, hsla(339, 80%, 12%, 0.25) 0%, transparent 60%),
     radial-gradient(at 0% 0%, hsla(205, 80%, 12%, 0.25) 0%, transparent 60%),
     radial-gradient(at 100% 0%, hsla(271, 80%, 12%, 0.25) 0%, transparent 60%),
     radial-gradient(at 100% 100%, hsla(50, 80%, 12%, 0.25) 0%, transparent 60%);
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

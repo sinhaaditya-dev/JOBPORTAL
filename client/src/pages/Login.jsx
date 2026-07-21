@@ -1,33 +1,40 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { SocialLogin } from '../components/SocialLogin';
 import { Mail, Lock, Check, AlertCircle, Briefcase } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const Login = () => {
   const { login } = useAuth();
-  const [email, setEmail] = useState('alex.mercer@gmail.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [role, setRole] = useState('Job Seeker');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please fill in all fields.');
       return;
     }
-    
-    // Call mock login
-    login(email, password, role);
-    navigate('/dashboard');
+
+    try {
+      setError('');
+      setIsSubmitting(true);
+      await login(email, password);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid Credentials');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
+    <div className="relative min-h-[calc(100vh-4rem)] w-full flex items-center justify-center px-4 py-12">
       {/* Background Mesh Glows */}
       <div className="bg-glow bg-glow-right"></div>
       <div className="bg-glow bg-glow-left"></div>
@@ -51,7 +58,7 @@ export const Login = () => {
           <button
             type="button"
             onClick={() => setRole('Job Seeker')}
-            className={`py-2 text-xs font-bold rounded-lg transition-all ${
+            className={`py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
               role === 'Job Seeker'
                 ? 'bg-white text-indigo-600 dark:bg-slate-800 dark:text-indigo-400 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -62,7 +69,7 @@ export const Login = () => {
           <button
             type="button"
             onClick={() => setRole('Employer')}
-            className={`py-2 text-xs font-bold rounded-lg transition-all ${
+            className={`py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
               role === 'Employer'
                 ? 'bg-white text-indigo-600 dark:bg-slate-800 dark:text-indigo-400 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -80,7 +87,6 @@ export const Login = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          
           {/* Email input */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
@@ -93,6 +99,7 @@ export const Login = () => {
                 placeholder="alex.mercer@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="username"
                 className="w-full text-sm pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-indigo-500 text-slate-800 dark:text-white transition-colors"
                 required
               />
@@ -116,6 +123,7 @@ export const Login = () => {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 className="w-full text-sm pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-indigo-500 text-slate-800 dark:text-white transition-colors"
                 required
               />
@@ -143,25 +151,22 @@ export const Login = () => {
           {/* Submit */}
           <button
             type="submit"
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-indigo-500/20 transition-all flex items-center justify-center space-x-2 cursor-pointer mt-6"
+            disabled={isSubmitting}
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-indigo-500/20 transition-all flex items-center justify-center space-x-2 cursor-pointer mt-6 disabled:opacity-60"
           >
-            <span>Sign In</span>
+            <span>{isSubmitting ? 'Signing In...' : 'Sign In'}</span>
           </button>
         </form>
 
-        {/* Social Authentication Integration */}
-        <div className="mt-6">
-          <SocialLogin actionLabel="Sign in" role={role} />
-        </div>
-
         <div className="text-center mt-6 text-xs text-slate-400 font-semibold">
           Don't have an account?{' '}
-          <Link to="/register" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+          <Link to="/register" className="text-indigo-600 dark:text-indigo-400 hover:underline font-bold">
             Create an account
           </Link>
         </div>
-
       </motion.div>
     </div>
   );
 };
+
+export default Login;

@@ -114,7 +114,7 @@ export const AuthProvider = ({ children }) => {
         
         // Fetch applicants for each job via GET /api/applications/job/:jobId
         const appsPromises = formattedMyJobs.map(job => 
-          api.get(`/applications/job/${job.id}`).catch(() => ({ data: { applications: [] } }))
+          api.get(`/jobs/${job.id}/applicants`).catch(() => ({ data: { applications: [] } }))
         );
         const appsResponses = await Promise.all(appsPromises);
         
@@ -350,7 +350,7 @@ export const AuthProvider = ({ children }) => {
     );
     try {
       await api.put(`/users/save-job/${jobId}`);
-    } catch (err) {
+    } catch (error) {
       // Ignored: save job backend API missing
     }
     return true;
@@ -436,7 +436,7 @@ export const AuthProvider = ({ children }) => {
       app.id === appId ? { ...app, status, feedback } : app
     ));
     try {
-      await api.put(`/applications/${appId}/status`, { status, feedback });
+      await api.put(`/jobs/applications/${appId}/status`, { status, feedback });
     } catch (error) {
       // Ignored: application status backend API missing
     }

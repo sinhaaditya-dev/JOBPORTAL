@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, Lock, Eye, EyeOff, AlertCircle, UserPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Swal from "sweetalert2";
 
 export const Register = () => {
   const { register } = useAuth();
@@ -16,32 +17,59 @@ export const Register = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!name || !email || !password) {
-      setError('Please fill in all required fields.');
-      return;
-    }
+  e.preventDefault();
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      return;
-    }
+  if (!name || !email || !password) {
+    Swal.fire({
+      icon: "warning",
+      title: "Missing Information",
+      text: "Please fill in all required fields.",
+    });
+    return;
+  }
 
-    try {
-      setError('');
-      setIsSubmitting(true);
-      const payloadRole = role === 'recruiter' ? 'recruiter' : 'student';
-      await register(name, email, password, payloadRole);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(
+  if (password.length < 8) {
+    Swal.fire({
+      icon: "warning",
+      title: "Weak Password",
+      text: "Password must be at least 8 characters long.",
+    });
+    return;
+  }
+
+  try {
+    setError("");
+    setIsSubmitting(true);
+
+    const payloadRole =
+      role === "recruiter" ? "recruiter" : "student";
+
+    await register(name, email, password, payloadRole);
+
+    await Swal.fire({
+      icon: "success",
+      title: "Registration Successful!",
+      text: "Your account has been created successfully.",
+      timer: 1800,
+      showConfirmButton: false,
+    });
+
+    navigate("/dashboard");
+
+  } catch (err) {
+
+    Swal.fire({
+      icon: "error",
+      title: "Registration Failed",
+      text:
         err.response?.data?.message ||
-          err.message ||
-          'Registration failed. Please try again.'
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+        err.message ||
+        "Registration failed. Please try again.",
+    });
+
+  } finally {
+    setIsSubmitting(false);
+  }
   };
 
   return (

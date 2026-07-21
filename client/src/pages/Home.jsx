@@ -280,6 +280,7 @@ export const Home = () => {
 
         {/* 5. Featured Jobs */}
         <div className="space-y-8">
+         
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -310,7 +311,6 @@ export const Home = () => {
               </Link>
             </motion.div>
           </motion.div>
-
           <motion.div
             variants={containerStagger}
             initial="hidden"
@@ -323,6 +323,7 @@ export const Home = () => {
                 <JobCard job={job} />
               </motion.div>
             ))}
+
           </motion.div>
         </div>
 

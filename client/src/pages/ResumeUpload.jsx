@@ -19,6 +19,7 @@ import {
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Swal from "sweetalert2";
 
 const JOB_TITLE_SUGGESTIONS = [
   'Java Developer',
@@ -169,6 +170,20 @@ export const ResumeUpload = () => {
     if (jobUrl && urlError) {
       return;
     }
+    //👇 SweetAlert Confirmation
+      const result = await Swal.fire({
+        title: "Upload Resume?",
+        text: "Your resume will be uploaded and analyzed for ATS score.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#2563eb",
+        cancelButtonColor: "#64748b",
+        confirmButtonText: "Yes, Upload",
+        cancelButtonText: "Cancel",
+        reverseButtons: true,
+      });
+
+      if (!result.isConfirmed) return;
 
     setAnalyzing(true);
     setAnalysisDone(false);
@@ -204,29 +219,49 @@ export const ResumeUpload = () => {
         experienceLevel
       };
 
-      const res = await uploadResume(file, metadata);
-      clearInterval(interval);
-      setProgress(100);
-      setAnalyzingStep('Analysis complete!');
+          const res = await uploadResume(file, metadata);
 
-      setTimeout(() => {
-        setAnalyzing(false);
-        setAnalysisDone(true);
-        setAnalysisResult(res?.user || user);
-        // Scroll smoothly to results
-        const resultsEl = document.getElementById('ats-results-section');
-        if (resultsEl) {
-          resultsEl.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 500);
+          clearInterval(interval);
+          setProgress(100);
+          setAnalyzingStep("Analysis complete!");
+
+          setTimeout(async () => {
+            setAnalyzing(false);
+            setAnalysisDone(true);
+            setAnalysisResult(res?.user || user);
+
+            await Swal.fire({
+              icon: "success",
+              title: "Resume Uploaded!",
+              text: "Your resume has been uploaded and analyzed successfully.",
+              timer: 1800,
+              showConfirmButton: false,
+            });
+
+            const resultsEl = document.getElementById("ats-results-section");
+            if (resultsEl) {
+              resultsEl.scrollIntoView({ behavior: "smooth" });
+            }
+          }, 500);
 
     } catch (err) {
-      clearInterval(interval);
-      setAnalyzing(false);
-      const msg = err?.response?.data?.message || err.message || 'Failed to process resume. Please try again.';
-      setErrorMessage(msg);
-    }
-  };
+          clearInterval(interval);
+          setAnalyzing(false);
+
+          const msg =
+            err?.response?.data?.message ||
+            err.message ||
+            "Failed to process resume. Please try again.";
+
+          Swal.fire({
+            icon: "error",
+            title: "Upload Failed",
+            text: msg,
+          });
+
+          setErrorMessage(msg);
+          }
+    };
 
   // Helper for file size display
   const formatFileSize = (bytes) => {

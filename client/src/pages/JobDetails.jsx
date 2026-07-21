@@ -79,7 +79,7 @@ export const JobDetails = () => {
 
   const handleApply = () => {
     if (isApplied) return;
-    applyToJob(job.id, job.title, job.company);
+    applyToJob(job.id);
   };
 
   return (

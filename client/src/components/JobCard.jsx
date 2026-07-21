@@ -8,7 +8,7 @@ import { getCompanyLogo } from '../utils/logos';
 export const JobCard = ({ job, onApply }) => {
   const { savedJobs, toggleSaveJob, applyToJob, user } = useAuth();
   const isSaved = savedJobs.includes(job.id);
-  const isApplied = user?.applications.some(app => app.jobId === job.id);
+  const isApplied = user?.applications.some(app => app.jobId === job.id) || false;
 
 
   const getMatchColor = (score) => {
@@ -20,7 +20,7 @@ export const JobCard = ({ job, onApply }) => {
   const handleApply = (e) => {
     e.preventDefault();
     if (isApplied) return;
-    applyToJob(job.id, job.title, job.company);
+    applyToJob(job.id);
     if (onApply) onApply(job);
   };
 
@@ -34,7 +34,15 @@ export const JobCard = ({ job, onApply }) => {
         <div className="flex space-x-3.5">
           {/* Company Logo */}
           <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-2 flex-shrink-0">
-            {getCompanyLogo(job.company, "w-8 h-8")}
+          {job.companyLogo?.url ? (
+            <img
+              src={job.companyLogo.url}
+              alt={job.company}
+              className="w-8 h-8 object-contain"
+            />
+          ) : (
+          getCompanyLogo(job.company, "w-8 h-8")
+          )}
           </div>
           <div>
             <Link to={`/jobs/${job.id}`} className="font-bold text-base text-slate-800 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors block leading-tight">

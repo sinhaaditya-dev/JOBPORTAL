@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, Check, AlertCircle, Briefcase } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Swal from "sweetalert2";
 
 export const Login = () => {
   const { login } = useAuth();
@@ -14,21 +15,41 @@ export const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
+  //Handle Login
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please fill in all fields.');
+      setIsSubmitting(true);
+
       return;
     }
 
     try {
-      setError('');
-      setIsSubmitting(true);
       await login(email, password);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid Credentials');
-    } finally {
+
+      await Swal.fire({
+        icon: "success",
+        title: "Login Successful!",
+        text: "Welcome back.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      navigate("/dashboard");
+
+    } catch (error) {
+
+      Swal.fire({
+        icon: "error",
+        title: "Login Failed",
+        text:
+          error.response?.data?.message ||
+          "Invalid email or password.",
+      });
+
+    }
+    finally {
       setIsSubmitting(false);
     }
   };

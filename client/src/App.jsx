@@ -12,6 +12,7 @@ import { ResumeUpload } from './pages/ResumeUpload';
 import { JobList } from './pages/JobList';
 import { JobDetails } from './pages/JobDetails';
 import { EditProfile } from './pages/EditProfile';
+import { EditJob } from './pages/EditJob';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
                 <Route path="/resume" element={<ResumeUpload />} />
                 <Route path="/jobs" element={<JobList />} />
                 <Route path="/jobs/:id" element={<JobDetails />} />
+                <Route path="/edit-job/:id" element={<EditJob />} />
               </Routes>
             </main>
             <Footer />

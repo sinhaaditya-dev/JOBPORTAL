@@ -31,12 +31,6 @@ const uploadCompanyLogo = async(req,res) =>{
                 message:"Not authorized to update this job"
             })
         }
-        //if company logo already uploaded , first delete the previous logo and update
-        if (job.companyLogo.public_id) {
-            await cloudinary.uploader.destroy(
-            job.companyLogo.public_id
-            );
-        } 
 
         //Step 4
         // Upload to Cloudinary
@@ -66,19 +60,30 @@ const uploadCompanyLogo = async(req,res) =>{
         });
 
         //Step 5
-        if (!job.companyLogo) {
-            job.companyLogo = {};
-        }
-        job.companyLogo.public_id = uploadResult.public_id
-        job.companyLogo.url = uploadResult.secure_url
+        // Update logo for all jobs of this recruiter
 
-        await job.save();
+        const recruiterJobs = await Job.find({
+        postedBy: req.user.id
+        });
+
+        for (const recruiterJob of recruiterJobs) {
+
+            recruiterJob.companyLogo = {
+            public_id: uploadResult.public_id,
+            url: uploadResult.secure_url
+            };
+
+            await recruiterJob.save();
+        }
 
             return res.status(200).json({
-            success: true,
-            message: "Company logo uploaded successfully",
-            companyLogo: job.companyLogo
-        });
+                success: true,
+                message: "Company logo uploaded successfully for all jobs",
+                companyLogo: {
+                    public_id: uploadResult.public_id,
+                    url: uploadResult.secure_url
+                }
+            });
 
 
     }

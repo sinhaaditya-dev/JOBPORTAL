@@ -19,12 +19,13 @@ import {
   Sparkles, 
   TrendingUp,
   FileText,
-  LogOut
+  LogOut,
+  Trash2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-
+import Swal from "sweetalert2";
 export const EmployerDashboard = () => {
-  const { user, jobs, applications, postJob, updateApplicationStatus, updateProfile, logout } = useAuth();
+  const { user, jobs, applications, postJob,updateJob, updateApplicationStatus, updateProfile, logout } = useAuth();
   const navigate = useNavigate();
   
   const employerCompany = user.companyName || user.company || 'Stripe';
@@ -65,29 +66,80 @@ export const EmployerDashboard = () => {
   );
 
   const handleLogoUpload = async (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setLogoUploading(true);
-      try {
-        const formData = new FormData();
-        formData.append('logo', file);
-        if (myJobs.length > 0) {
-          const targetJobId = myJobs[0].id || myJobs[0]._id;
-          await api.put(`/jobs/${targetJobId}/upload-logo`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-          updateProfile({ logoName: file.name });
-          alert('Company logo uploaded successfully for job listing!');
-        } else {
-          alert('Please post a job first to upload a company logo.');
-        }
-      } catch (err) {
-        console.error('Logo upload error:', err);
-        alert('Logo upload failed. Please try again.');
-      } finally {
-        setLogoUploading(false);
-      }
+  if (e.target.files && e.target.files[0]) {
+
+    const file = e.target.files[0];
+
+    const result = await Swal.fire({
+      title: "Upload Logo?",
+      text: "Do you want to update company logo?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#2563eb",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, Upload",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) {
+      e.target.value = "";
+      return;
     }
+
+    setLogoUploading(true);
+
+    try {
+
+      const formData = new FormData();
+      formData.append('logo', file);
+
+      if (myJobs.length > 0) {
+
+        const targetJobId = myJobs[0].id || myJobs[0]._id;
+
+        await api.put(`/jobs/${targetJobId}/upload-logo`, formData, {
+          headers: { 
+            'Content-Type': 'multipart/form-data' 
+          }
+        });
+
+        await updateProfile({ logoName: file.name });
+
+        await Swal.fire({
+          icon: "success",
+          title: "Uploaded!",
+          text: "Company logo uploaded successfully.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+
+      } else {
+
+        Swal.fire({
+          icon: "warning",
+          title: "No Job Found",
+          text: "Please post a job first to upload a company logo.",
+        });
+
+      }
+
+    } catch (err) {
+
+      console.error('Logo upload error:', err);
+
+      Swal.fire({
+        icon: "error",
+        title: "Upload Failed",
+        text: "Logo upload failed. Please try again.",
+      });
+
+    } finally {
+
+      setLogoUploading(false);
+
+    }
+  }
   };
 
   // Get applications for my jobs
@@ -153,7 +205,66 @@ export const EmployerDashboard = () => {
       alert(`Job Post Failed: ${errorMessage}`);
     }
   };
+  //Edit job
+  const handleEditJob = async (job) => {
+  const result = await Swal.fire({
+    title: "Edit Job?",
+    text: "Do you want to update this job details?",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#2563eb",
+    cancelButtonColor: "#64748b",
+    confirmButtonText: "Yes, Edit",
+    cancelButtonText: "Cancel",
+    reverseButtons: true,
+  });
 
+  if (!result.isConfirmed) return;
+
+  navigate(`/edit-job/${job.id || job._id}`, {
+    state: job
+  });
+  };
+ //Delete job
+  const handleDeleteJob = async (jobId) => {
+  const result = await Swal.fire({
+    title: "Delete Job?",
+    text: "This job will be permanently deleted.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#dc2626",
+    cancelButtonColor: "#64748b",
+    confirmButtonText: "Yes, Delete",
+    cancelButtonText: "Cancel",
+    reverseButtons: true,
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    await api.delete(`/jobs/${jobId}`);
+
+    await Swal.fire({
+      icon: "success",
+      title: "Deleted!",
+      text: "Job deleted successfully.",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+
+
+  } catch (error) {
+
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text:
+        error.response?.data?.message ||
+        "Failed to delete job.",
+    });
+
+  }
+};
 
   const handleShortlist = (appId) => {
     updateApplicationStatus(
@@ -179,16 +290,49 @@ export const EmployerDashboard = () => {
     setRejectingAppId(null);
   };
 
-  const handleSaveProfile = (e) => {
-    e.preventDefault();
-    updateProfile({
+  // save company profile
+  const handleSaveProfile = async (e) => {
+  e.preventDefault();
+
+  const result = await Swal.fire({
+    title: "Save Changes?",
+    text: "Do you want to update your company profile?",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#10b981",
+    cancelButtonColor: "#64748b",
+    confirmButtonText: "Yes, Save",
+    cancelButtonText: "Cancel",
+    reverseButtons: true,
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    await updateProfile({
       industry: editIndustry,
       companySize: editSize,
       website: editWebsite,
-      companyDescription: editDesc
+      companyDescription: editDesc,
     });
-    setShowProfileSuccess(true);
-    setTimeout(() => setShowProfileSuccess(false), 2000);
+
+    await Swal.fire({
+      icon: "success",
+      title: "Profile Updated!",
+      text: "Company profile updated successfully.",
+      timer: 1800,
+      showConfirmButton: false,
+    });
+
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Update Failed",
+      text:
+        error.response?.data?.message ||
+        "Unable to update company profile.",
+    });
+  }
   };
 
   // Math metrics for overview
@@ -604,20 +748,40 @@ export const EmployerDashboard = () => {
                                 </span>
                               </td>
                               <td className="px-4 py-4 text-right">
-                                <button
-                                  onClick={() => {
-                                    setSelectedJobFilter(job.id);
-                                    setActiveTab('applicants');
-                                    // Pre-select first applicant of this job if any
-                                    const jobApps = myApplications.filter(a => a.jobId === job.id);
+                                <div className="flex justify-end gap-2">
+
+                                  <button
+                                    onClick={() => {
+                                    setSelectedJobFilter(job.id || job._id);
+                                    setActiveTab("applicants");
+
+                                    const jobApps = myApplications.filter(
+                                    (a) => a.jobId === (job.id || job._id)
+                                    );
+
                                     if (jobApps.length > 0) {
                                       setSelectedAppId(jobApps[0].id);
                                     }
-                                  }}
-                                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 dark:bg-slate-800 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 border border-slate-250 dark:border-slate-700 hover:border-emerald-200 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                                >
-                                  View Pipeline
-                                </button>
+                                    }}
+                                    className="px-3.5 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 dark:bg-slate-800 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 border border-slate-250 dark:border-slate-700 hover:border-emerald-200 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                    >
+                                    View Pipeline
+                                  </button>
+                                    <button
+                                      onClick={() => handleEditJob(job)}
+                                      className="flex items-center gap-1 px-3.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                      >
+                                      Edit
+                                    </button>
+                                  <button
+                                    onClick={() => handleDeleteJob(job.id || job._id)}
+                                    className="flex items-center gap-1 px-3.5 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                    >
+                                    <Trash2 size={14} />
+                                    Delete
+                                  </button>
+
+                                </div>
                               </td>
                             </tr>
                           );

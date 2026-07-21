@@ -35,7 +35,7 @@ export const JobList = () => {
   };
 
   // Categories list starting with 'All'
-  const categoriesList = ['All', ...new Set(jobs.map(job => job.category))];
+  const categoriesList = ['All'];
   const jobTypesList = ['All', 'Full-time', 'Part-time', 'Remote', 'Contract'];
 
   // Handle live searches
@@ -48,8 +48,7 @@ export const JobList = () => {
     const matchLocation = 
       job.location.toLowerCase().includes(location.toLowerCase());
 
-    const matchCategory = 
-      category === 'All' || job.category === category;
+    const matchCategory = true;
 
     const matchType = 
       jobType === 'All' || job.type === jobType;

@@ -19,6 +19,13 @@ connectDB();
 app.get("/", (req, res) => {
   res.send("Backend running");
 });
+const cors = require("cors");
+
+
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+}));
 //middleware
 app.use(express.json());
 

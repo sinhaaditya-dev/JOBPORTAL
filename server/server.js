@@ -7,6 +7,7 @@ const authRoutes = require("./src/routes/authRoutes");
 const jobRoutes = require("./src/routes/jobRoutes");
 const applicationRoutes = require("./src/routes/applicationRoutes");
 const userRoutes = require("./src/routes/userRoutes");
+const dashboardRotes = require("./src/routes/dashboardRotes")
 const cloudinary = require("./src/config/cloudinary");
 
 const app = express();
@@ -25,6 +26,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/dashboard",dashboardRotes);
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {

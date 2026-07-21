@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createJob,getAllJobs, getMyJobs,getJobById, updateJob, deleteJob } = require('../controllers/jobController');
+const { createJob,getAllJobs, getMyJobs,getJobById, updateJob, deleteJob,getApplicants,updateApplicationStatus } = require('../controllers/jobController');
 const { protect, authorizeRecruiter } = require('../middleware/authMiddleware');
 const {uploadLogo} = require('../middleware/logoUploadMiddleware')
 const {uploadCompanyLogo} = require('../controllers/uploadCompanyLogoController')
@@ -12,5 +12,7 @@ router.get("/myjobs", protect, authorizeRecruiter, getMyJobs);
 router.get("/:id", getJobById);
 router.put("/:id", protect, authorizeRecruiter, updateJob)
 router.delete("/:id", protect, authorizeRecruiter, deleteJob)
+router.get('/:jobId/applicants',protect,authorizeRecruiter,getApplicants)
+router.put('/applications/:applicationId/status',protect,authorizeRecruiter,updateApplicationStatus)
 router.put("/:jobId/upload-logo",protect,authorizeRecruiter,uploadLogo.single('logo'),uploadCompanyLogo)
 module.exports = router;

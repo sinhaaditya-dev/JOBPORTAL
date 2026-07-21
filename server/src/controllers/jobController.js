@@ -1,4 +1,5 @@
 const Job = require('../models/Job');
+const Application = require('../models/Application')
 const createJob = async(req,res) =>{
     try{
         const{
@@ -259,4 +260,126 @@ const deleteJob = async(req,res) =>{
         });
     }
 }
-module.exports = { createJob , getAllJobs, getMyJobs, getJobById, updateJob, deleteJob };
+
+const getApplicants = async (req, res) => {
+    try {
+
+        // Step 1
+        // Find Job
+        const job = await Job.findById(req.params.jobId)
+        // Step 2
+        // Check Job Exists
+        if(!job){
+            return res.status(404).json({
+                success:false,
+                message:"Job not found"
+            })
+        }
+        // Step 3
+        // Ownership Check
+        if(job.postedBy.toString() !== req.user.id){
+            return res.status(401).json({
+                success:false,
+                message:"You are not Authorized to view Applicants"
+            })
+        }
+        // Step 4
+        // Find Applications
+        const applications = await Application.find({
+            job:req.params.jobId
+        })
+        .populate("applicant", "name email resume")
+        .populate("job", "title company")
+        .select("-__v")
+        .sort({
+            createdAt:-1
+        })
+        // Step 5
+        // Response
+        return res.status(200).json({
+            success:true,
+            totalApplicants: applications.length,
+            applications
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+const updateApplicationStatus = async(req,res) =>{
+    try{
+        // Step 1
+        // Get status from body
+        const status = req.body.status?.trim().toLowerCase();
+        // Step 2
+        // Validate status
+        const validStatus = [
+            "pending",
+            "accepted",
+            "rejected"
+        ];
+        if(!validStatus.includes(status)){
+            return res.status(400).json({
+                success:false,
+                message:"Invalid Status"
+            })
+        }
+        // Step 3
+        // Find Application
+        const application = await Application.findById(
+            req.params.applicationId
+        );
+        // Step 4
+        // Check Application Exists
+        if(!application){
+            return res.status(404).json({
+                success:false,
+                message:"Application not found"
+            })
+        }
+        // Step 5
+        // Find Related Job
+        const job = await Job.findById(
+            application.job
+        )
+        //check if job exists
+        if(!job){
+            return res.status(404).json({
+                success:false,
+                message:"Job not found"
+            })
+        }
+        // Step 6
+        // Check Recruiter Ownership
+        if(job.postedBy.toString() !== req.user.id){
+            return res.status(401).json({
+                success:false,
+                message:"You are not authorized to update this application"
+            })
+        }
+        // Step 7
+        // Update Status
+        application.status = status;
+        // Step 8
+        // Save
+        await application.save();
+        // Step 9
+        // Success Response
+        return res.status(200).json({
+            success: true,
+            message: "Application status updated successfully",
+            application
+        });
+    }
+    catch(error){
+        return res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
+module.exports = { createJob , getAllJobs, getMyJobs, getJobById, updateJob, deleteJob,getApplicants,updateApplicationStatus };

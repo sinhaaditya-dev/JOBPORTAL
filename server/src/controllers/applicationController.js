@@ -106,60 +106,9 @@ const withdrawApplication = async (req, res) => {
     }
 }
 
-const getApplicantsForJob = async (req, res) => {
-    try {
-
-        // Step 1
-        // Find Job
-        const job = await Job.findById(req.params.jobId);
-        // Step 2
-        // Check Exists
-        if(!job){
-            return res.status(404).json({
-                success:false,
-                message:"Job not found"
-            })
-        }
-        // Step 3
-        // Ownership Check
-        if(job.postedBy.toString() !== req.user.id){
-            return res.status(401).json({
-            success:false,
-            message:"You are not authorized to view applicants for this job"
-            })
-        }
-
-        // Step 4
-        // Find Applications
-        const applications = await Application.find({job:req.params.jobId})
-
-        // Step 5
-        // Populate Applicant
-        .populate("applicant", "name email")
-        .populate("job", "title company experience location salary jobType")
-        .sort({
-            createdAt:-1
-        })
-        // Step 6
-        // Response
-        return res.status(200).json({
-            success:true,
-            count:applications.length,
-            applications
-        })
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-
-    }
-};
 
 module.exports = {
     applyForJob,
     getMyApplications,
     withdrawApplication,
-    getApplicantsForJob
 };

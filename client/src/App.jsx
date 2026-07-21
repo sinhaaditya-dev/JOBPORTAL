@@ -11,35 +11,32 @@ import { Dashboard } from './pages/Dashboard';
 import { ResumeUpload } from './pages/ResumeUpload';
 import { JobList } from './pages/JobList';
 import { JobDetails } from './pages/JobDetails';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "1049285029384-mockclientid123456789.apps.googleusercontent.com";
+import { EditProfile } from './pages/EditProfile';
 
 function App() {
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <ThemeProvider>
-        <AuthProvider>
-          <Router>
-            <div className="flex flex-col min-h-screen bg-[rgb(var(--bg-base))] text-slate-700 dark:text-slate-300 transition-colors duration-300">
-              <Navbar />
-              <main className="flex-grow">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/resume" element={<ResumeUpload />} />
-                  <Route path="/jobs" element={<JobList />} />
-                  <Route path="/jobs/:id" element={<JobDetails />} />
-                </Routes>
-              </main>
-              <Footer />
-            </div>
-          </Router>
-        </AuthProvider>
-      </ThemeProvider>
-    </GoogleOAuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <div className="flex flex-col min-h-screen w-full bg-mesh-gradient text-slate-700 dark:text-slate-300 transition-colors duration-300">
+            <Navbar />
+            <main className="flex-grow w-full">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard/profile/edit" element={<EditProfile />} />
+                <Route path="/resume" element={<ResumeUpload />} />
+                <Route path="/jobs" element={<JobList />} />
+                <Route path="/jobs/:id" element={<JobDetails />} />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

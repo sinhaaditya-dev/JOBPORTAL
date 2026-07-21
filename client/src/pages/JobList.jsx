@@ -63,7 +63,7 @@ export const JobList = () => {
   };
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen w-full">
       {/* Background Mesh Glows */}
       <div className="bg-glow bg-glow-right"></div>
       <div className="bg-glow bg-glow-left"></div>

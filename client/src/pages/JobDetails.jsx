@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, formatSalary } from '../context/AuthContext';
+import api from '../utils/api';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -19,8 +21,44 @@ export const JobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { savedJobs, toggleSaveJob, applyToJob, user, jobs } = useAuth();
+  const [fetchedJob, setFetchedJob] = useState(null);
+  const [loadingJob, setLoadingJob] = useState(false);
 
-  const job = jobs.find((j) => j.id === id);
+  const localJob = jobs.find((j) => j.id === id || j._id === id);
+  const job = localJob || fetchedJob;
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!localJob && id) {
+      setLoadingJob(true);
+      api.get(`/jobs/${id}`)
+        .then(res => {
+          if (isMounted && res.data && res.data.job) {
+            const j = res.data.job;
+            setFetchedJob({
+              ...j,
+              id: j._id,
+              type: j.jobType || j.type || 'Full-time',
+              salary: formatSalary(j.salary),
+              postedTime: j.createdAt ? new Date(j.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Recently'
+            });
+          }
+        })
+        .catch(err => console.error("Error fetching job details:", err))
+        .finally(() => {
+          if (isMounted) setLoadingJob(false);
+        });
+    }
+    return () => { isMounted = false; };
+  }, [id, localJob]);
+
+  if (loadingJob) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-16 text-center space-y-4">
+        <p className="text-sm text-slate-500 font-semibold">Loading job details...</p>
+      </div>
+    );
+  }
 
   if (!job) {
     return (

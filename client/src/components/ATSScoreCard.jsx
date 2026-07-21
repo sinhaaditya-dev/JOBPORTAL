@@ -3,7 +3,7 @@ import { CheckCircle2, AlertTriangle, Upload } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
-export const ATSScoreCard = ({ score = 0, skills = [] }) => {
+export const ATSScoreCard = ({ score = 0, skills = [], recommendedSkills = [], suggestions = [] }) => {
   const hasSkills = skills && skills.length > 0;
 
   // SVG Math for Radial Gauge
@@ -11,7 +11,7 @@ export const ATSScoreCard = ({ score = 0, skills = [] }) => {
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (score / 100) * circumference;
 
-  const missingSkills = ['Docker', 'Microservices', 'AWS', 'Kubernetes'];
+  const missingSkills = recommendedSkills && recommendedSkills.length > 0 ? recommendedSkills : [];
 
   const getScoreColor = (s) => {
     if (s >= 90) return 'text-green-500 stroke-green-500';
@@ -132,23 +132,19 @@ export const ATSScoreCard = ({ score = 0, skills = [] }) => {
           </div>
 
           {/* Suggested Actions Checklist */}
-          <div className="border-t border-slate-200 dark:border-slate-800/80 pt-4 mt-2 space-y-2">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-350">Actionable Feedback:</span>
-            <ul className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
-              <li className="flex items-start">
-                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-1.5 mr-2"></span>
-                Add metrics to project descriptions (e.g. "Improved performance by 25%")
-              </li>
-              <li className="flex items-start">
-                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-1.5 mr-2"></span>
-                Integrate 2-3 missing skills into your active work experience section
-              </li>
-              <li className="flex items-start">
-                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mt-1.5 mr-2"></span>
-                Format sections using standard headings to prevent parsing errors
-              </li>
-            </ul>
-          </div>
+          {suggestions && suggestions.length > 0 && (
+            <div className="border-t border-slate-200 dark:border-slate-800/80 pt-4 mt-2 space-y-2">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-350">Actionable Feedback:</span>
+              <ul className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
+                {suggestions.map((suggestion, idx) => (
+                  <li key={idx} className="flex items-start">
+                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
+                    <span>{suggestion}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </>
       )}
     </div>

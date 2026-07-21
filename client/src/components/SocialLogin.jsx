@@ -1,58 +1,26 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { GoogleLogin } from '@react-oauth/google';
 import { motion } from 'framer-motion';
 
-const decodeJwt = (token) => {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      window
-        .atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch (error) {
-    console.error('Error decoding JWT', error);
-    return null;
-  }
-};
-
 export const SocialLogin = ({ role = "Job Seeker" }) => {
-  const { loginWithGoogle } = useAuth();
-  const navigate = useNavigate();
 
-  const handleGoogleSuccess = (credentialResponse) => {
-    const decoded = decodeJwt(credentialResponse.credential);
-    if (decoded) {
-      const googleUser = {
-        name: decoded.name,
-        email: decoded.email,
-        role: role,
-        phone: '',
-        location: 'San Francisco, CA',
-        title: role === 'Employer' ? 'HR Manager' : 'Software Engineer',
-        avatar: decoded.picture,
-        skills: [], // New user starts with no skills as expected
-        resumeName: '',
-        resumeSize: '',
-        resumeUploadDate: '',
-        atsScore: 0,
-        profileCompletion: 40,
-        applications: []
-      };
-      loginWithGoogle(googleUser);
-      navigate('/dashboard');
-    }
+  const handleGithubClick = () => {
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID || "1049285029384-mockgithubclientid.apps.githubusercontent.com";
+    const redirectUri = window.location.origin + '/login';
+    const state = `github:${role}`;
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=${encodeURIComponent(state)}`;
+  };
+
+  const handleFacebookClick = () => {
+    const appId = import.meta.env.VITE_FACEBOOK_APP_ID || "1049285029384-mockfacebookappid";
+    const redirectUri = window.location.origin + '/login';
+    const state = `facebook:${role}`;
+    window.location.href = `https://www.facebook.com/v12.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=email,public_profile&state=${encodeURIComponent(state)}`;
   };
 
   const providers = [
     {
       name: 'Facebook',
+      onClick: handleFacebookClick,
       bgColor: 'hover:bg-blue-50 dark:hover:bg-blue-950/20',
       borderColor: 'hover:border-blue-300 dark:hover:border-blue-900/50',
       textColor: 'hover:text-blue-600 dark:hover:text-blue-400',
@@ -64,6 +32,7 @@ export const SocialLogin = ({ role = "Job Seeker" }) => {
     },
     {
       name: 'GitHub',
+      onClick: handleGithubClick,
       bgColor: 'hover:bg-slate-50 dark:hover:bg-slate-800/40',
       borderColor: 'hover:border-slate-400 dark:hover:border-slate-600',
       textColor: 'hover:text-slate-900 dark:hover:text-white',
@@ -86,21 +55,7 @@ export const SocialLogin = ({ role = "Job Seeker" }) => {
       </div>
 
       <div className="flex flex-col items-center space-y-3.5 w-full">
-        {/* Google Login Component wrapper */}
-        <div className="w-full flex justify-center GoogleLoginWrapper">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => {
-              console.error('Google Sign-In failed');
-            }}
-            useOneTap
-            theme="filled_blue"
-            shape="pill"
-            width="320px"
-          />
-        </div>
-
-        {/* Other Social mock buttons */}
+        {/* Social mock buttons */}
         <div className="grid grid-cols-2 gap-3 w-full max-w-[320px]">
           {providers.map((provider) => (
             <motion.button
@@ -108,6 +63,7 @@ export const SocialLogin = ({ role = "Job Seeker" }) => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="button"
+              onClick={provider.onClick}
               className={`flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 glass-card bg-opacity-30 dark:bg-opacity-10 cursor-pointer font-medium text-xs transition-all duration-200 ${provider.bgColor} ${provider.borderColor} ${provider.textColor}`}
             >
               {provider.icon}

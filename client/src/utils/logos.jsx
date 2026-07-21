@@ -1,5 +1,31 @@
 
-export const getCompanyLogo = (companyName, sizeClass = "w-6 h-6") => {
+export const getCompanyLogo = (companyOrJob = '', sizeClass = "w-6 h-6", logoUrlParam = "") => {
+  let companyName = "";
+  let logoUrl = logoUrlParam;
+
+  if (typeof companyOrJob === 'object' && companyOrJob !== null) {
+    companyName = companyOrJob.company || companyOrJob.companyName || "";
+    logoUrl = companyOrJob.companyLogo?.url || companyOrJob.companyLogo || companyOrJob.logo || logoUrlParam;
+  } else {
+    companyName = String(companyOrJob || "");
+  }
+
+  const url = typeof logoUrl === 'object' ? logoUrl?.url : logoUrl;
+
+  if (url && typeof url === 'string' && url.trim() !== '') {
+    return (
+      <img
+        src={url}
+        alt={companyName}
+        className={`${sizeClass} object-contain rounded-md flex-shrink-0`}
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.style.display = 'none';
+        }}
+      />
+    );
+  }
+
   const name = companyName.toLowerCase();
   
   if (name.includes('google')) {

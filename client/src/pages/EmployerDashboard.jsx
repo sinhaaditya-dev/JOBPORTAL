@@ -265,13 +265,14 @@ export const EmployerDashboard = () => {
 
   }
 };
-
+  //Handle shortlist our backend accepts accepted,rejected and pending
   const handleShortlist = (appId) => {
     updateApplicationStatus(
       appId, 
-      'Shortlisted', 
+      'accepted', 
       'Your profile matches our skill requirements. We would love to schedule a introductory technical call next week!'
     );
+    setSelectedAppId(appId);
   };
 
   const triggerReject = (appId) => {
@@ -280,14 +281,25 @@ export const EmployerDashboard = () => {
     setShowRejectModal(true);
   };
 
-  const handleRejectSubmit = () => {
-    if (!rejectFeedback.trim()) {
-      alert('Please provide feedback reasons.');
-      return;
-    }
-    updateApplicationStatus(rejectingAppId, 'Rejected', rejectFeedback);
-    setShowRejectModal(false);
-    setRejectingAppId(null);
+ const handleRejectSubmit = async () => {
+
+  if (!rejectFeedback.trim()) {
+    alert("Please provide feedback reasons.");
+    return;
+  }
+
+  await updateApplicationStatus(
+    rejectingAppId,
+    "rejected",
+    rejectFeedback
+  );
+
+  setSelectedAppId(rejectingAppId);
+
+  setShowRejectModal(false);
+
+  setRejectingAppId(null);
+
   };
 
   // save company profile

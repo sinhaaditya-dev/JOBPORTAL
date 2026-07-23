@@ -101,16 +101,7 @@ export const AuthProvider = ({ children }) => {
         }));
 
         // Sync employer's posted jobs into jobs state
-        setJobs(prevJobs => {
-          const myJobMap = new Map();
-          formattedMyJobs.forEach(j => myJobMap.set(j.id, j));
-          prevJobs.forEach(j => {
-            if (!myJobMap.has(j.id)) {
-              myJobMap.set(j.id, j);
-            }
-          });
-          return Array.from(myJobMap.values());
-        });
+        setJobs(formattedMyJobs);
         
         // Fetch applicants for each job via GET /api/applications/job/:jobId
         const appsPromises = formattedMyJobs.map(job => 
@@ -260,20 +251,27 @@ export const AuthProvider = ({ children }) => {
 
   // Fallback for missing backend profile update endpoint
   const updateProfile = async (updatedData) => {
-    try {
-      const res = await api.put('/users/profile', updatedData);
-      const mapped = mapUser(res.data.user);
-      setUser(prev => ({
-        ...prev,
-        ...mapped,
-        applications: prev?.applications || []
-      }));
-      return true;
-    } catch (error) {
-      // Backend /users/profile endpoint missing; update local state gracefully
-      setUser(prev => prev ? { ...prev, ...updatedData } : null);
-      return true;
-    }
+  try {
+
+    const res = await api.put("/users/profile", updatedData);
+
+    const mapped = mapUser(res.data.user);
+
+    setUser(prev => ({
+      ...prev,
+      ...mapped,
+      applications: prev?.applications || []
+    }));
+
+    return true;
+
+  } catch (error) {
+
+    console.error("Profile update failed:", error);
+
+    throw error;
+
+  }
   };
 
   // Apply to job via POST /api/applications/:jobId
@@ -432,15 +430,52 @@ export const AuthProvider = ({ children }) => {
 
   // Update application status (missing backend endpoint fallback)
   const updateApplicationStatus = async (appId, status, feedback) => {
-    setApplications(prev => prev.map(app => 
-      app.id === appId ? { ...app, status, feedback } : app
-    ));
-    try {
-      await api.put(`/jobs/applications/${appId}/status`, { status, feedback });
-    } catch (error) {
-      // Ignored: application status backend API missing
-    }
-    return true;
+
+  // Backend values -> Frontend values
+  const displayStatus =
+    status === "accepted"
+      ? "Shortlisted"
+      : status === "rejected"
+      ? "Rejected"
+      : "Reviewing";
+
+  // Backup current state (for rollback)
+  const previousApplications = applications;
+
+  // Optimistic UI Update
+  setApplications(prev =>
+    prev.map(app =>
+      app.id === appId
+        ? {
+            ...app,
+            status: displayStatus,
+            feedback,
+          }
+        : app
+    )
+  );
+
+  try {
+
+    const res = await api.put(
+      `/jobs/applications/${appId}/status`,
+      {
+        status,
+        feedback,
+      }
+    );
+
+    return res.data;
+
+  } catch (error) {
+
+    console.error("Failed to update application status:", error);
+
+    // Rollback UI if backend update fails
+    setApplications(previousApplications);
+
+    throw error;
+  }
   };
 
   return (

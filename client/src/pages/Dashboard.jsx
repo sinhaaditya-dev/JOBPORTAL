@@ -52,16 +52,29 @@ const defaultNotifications = [
 ];
 
 export const Dashboard = () => {
-  const { user, savedJobs, updateProfile, jobs, logout } = useAuth();
+  const { user, savedJobs, updateProfile, jobs, logout,loading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedApp, setExpandedApp] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-    }
-  }, [user, navigate]);
+
+  // Wait until AuthContext finishes loading
+  if (loading) return;
+
+  if (!user) {
+    navigate("/login", { replace: true });
+  }
+
+}, [loading, user, navigate]);
+
+  if (loading) {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+          Loading...
+        </div>
+      );
+  }
 
   if (!user) {
     return null;

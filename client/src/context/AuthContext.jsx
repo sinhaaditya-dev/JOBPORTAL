@@ -504,7 +504,7 @@ export const AuthProvider = ({ children }) => {
       updateApplicationStatus,
       loading
     }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

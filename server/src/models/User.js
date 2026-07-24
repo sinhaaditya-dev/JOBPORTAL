@@ -41,6 +41,16 @@ const UserSchema = new mongoose.Schema({
             default:""
         }
     },
+    aiReport: {
+        atsScore: Number,
+        summary: [String],
+        skills: [String],
+        missingSkills: [String],
+        strengths: [String],
+        weaknesses: [String],
+        recommendations: [String],
+        updatedAt: Date
+    }
 }, 
 {
     timestamps:true

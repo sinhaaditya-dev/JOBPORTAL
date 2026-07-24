@@ -10,6 +10,7 @@ const userRoutes = require("./src/routes/userRoutes");
 const dashboardRotes = require("./src/routes/dashboardRotes")
 const studentDashboardRoutes = require("./src/routes/studentDashboardRoutes")
 const profilePictureRoutes = require('./src/routes/profilePictureRoutes')
+const resumeAIRoutes = require("./src/routes/resumeAIRoutes")
 const cloudinary = require("./src/config/cloudinary");
 
 const app = express();
@@ -38,6 +39,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/dashboard",dashboardRotes);
 app.use("/api/dashboard/student",studentDashboardRoutes)
 app.use("/api/profile", profilePictureRoutes)
+app.use("/api/ai", resumeAIRoutes)
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

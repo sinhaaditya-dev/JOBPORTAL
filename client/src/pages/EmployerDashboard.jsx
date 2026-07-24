@@ -624,10 +624,10 @@ export const EmployerDashboard = () => {
                       onChange={(e) => setPostType(e.target.value)}
                       className="w-full text-xs px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-700 dark:text-slate-300"
                     >
-                      <option value="Full-time">Full-time</option>
-                      <option value="Part-time">Part-time</option>
-                      <option value="Remote">Remote</option>
-                      <option value="Contract">Contract</option>
+                      <option value="full-time">Full-time</option>
+                      <option value="part-time">Part-time</option>
+                      <option value="internship">Internship</option>
+                      <option value="contract">Contract</option>
                     </select>
                   </div>
 
@@ -667,13 +667,13 @@ export const EmployerDashboard = () => {
                     <select
                       value={postExp}
                       onChange={(e) => setPostExp(e.target.value)}
-                      className="w-full text-xs px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-700 dark:text-slate-300"
+                      className="w-full text-xs px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-700 dark:text-slate-300 "
                     >
                       <option value="Fresher">Fresher / Intern</option>
-                      <option value="0-1 years">0-1 years</option>
-                      <option value="1-3 years">1-3 years</option>
-                      <option value="3-5 years">3-5 years</option>
-                      <option value="5+ years">5+ years</option>
+                      <option value="1-2 Years">1-2 Years</option>
+                      <option value="2-4 Years">2-4 Years</option>
+                      <option value="4-6 Years">4-6 Years</option>
+                      <option value="6+ Years">6+ Years</option>
                     </select>
                   </div>
 
@@ -687,7 +687,7 @@ export const EmployerDashboard = () => {
                       placeholder="e.g. React, TypeScript, Tailwind, Redux"
                       value={postSkills}
                       onChange={(e) => setPostSkills(e.target.value)}
-                      className="w-full text-xs px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-900 dark:text-white"
+                      className="w-full text-xs px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-900 dark:text-white "
                     />
                   </div>
 

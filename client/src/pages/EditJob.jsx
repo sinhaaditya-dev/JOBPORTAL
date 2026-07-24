@@ -113,7 +113,7 @@ export const EditJob = () => {
           >
             <option>Full-time</option>
             <option>Part-time</option>
-            <option>Remote</option>
+            <option>Internship</option>
             <option>Contract</option>
           </select>
 

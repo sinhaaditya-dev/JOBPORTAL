@@ -2,6 +2,7 @@ const User = require("../models/User");
 const cloudinary = require("../config/cloudinary");
 const streamifier = require("streamifier");
 
+//Upload Resume
 const uploadResume = async (req, res) => {
     try {
         // Step 1
@@ -38,7 +39,7 @@ const uploadResume = async (req, res) => {
         .createReadStream(req.file.buffer)
         .pipe(stream);
 
-});
+    });
 
         // Step 3
         // Update User
@@ -71,6 +72,54 @@ const uploadResume = async (req, res) => {
     }
 };
 
+//Delete Resume
+const deleteResume = async (req, res) => {
+    try {
+
+        // Step 1
+        // Find Logged In User
+        const user = await User.findById(req.user.id)
+        if(!user){
+            return res.status(404).json({
+                success:false,
+                message:"User not found"
+            });
+        }
+        // Step 2
+        // Check Resume Exists
+        if(!user.resume || !user.resume.public_id){
+            return res.status(404).json({
+                success:false,
+                message: "Resume not found."
+            })
+        }
+        // Step 3
+        // Delete Resume from Cloudinary
+        await cloudinary.uploader.destroy(user.resume.public_id);
+        // Step 4
+        // Remove Resume from Database
+        user.resume = null
+        // Step 5
+        // Save User
+        await user.save();
+        // Step 6
+        // Send Success Response
+        return res.status(200).json({
+            success: true,
+            message: "Resume deleted successfully"
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
+    }
+};
+
 module.exports = {
     uploadResume,
+    deleteResume
 };

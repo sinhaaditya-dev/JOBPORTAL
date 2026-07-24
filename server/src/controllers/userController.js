@@ -98,7 +98,10 @@ const deleteResume = async (req, res) => {
         await cloudinary.uploader.destroy(user.resume.public_id);
         // Step 4
         // Remove Resume from Database
-        user.resume = null
+        user.resume = {
+            public_id:"",
+            url:""
+        }
         // Step 5
         // Save User
         await user.save();

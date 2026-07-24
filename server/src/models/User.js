@@ -31,6 +31,16 @@ const UserSchema = new mongoose.Schema({
             default: ""
         }
     },
+    avatar: {
+        public_id:{
+            type:String,
+            default:""
+        },
+        url:{
+            type:String,
+            default:""
+        }
+    },
 }, 
 {
     timestamps:true

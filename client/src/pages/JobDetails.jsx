@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { getCompanyLogo } from '../utils/logos';
 
+import Swal from 'sweetalert2';
+
 export const JobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -72,14 +74,57 @@ export const JobDetails = () => {
   const isSaved = savedJobs.includes(job.id);
   const isApplied = user?.applications.some(app => app.jobId === job.id);
 
-  // Divide skills into matching and missing based on user profiles
+  // Divide skills into matching and missing based on user profiles (case-insensitive)
   const userSkills = user?.skills || [];
-  const matchingSkills = job.skills.filter(skill => userSkills.includes(skill));
-  const missingSkills = job.skills.filter(skill => !userSkills.includes(skill));
+  const userSkillsLower = userSkills.map(s => s.toLowerCase().trim());
+  const matchingSkills = job.skills.filter(skill => userSkillsLower.includes(skill.toLowerCase().trim()));
+  const missingSkills = job.skills.filter(skill => !userSkillsLower.includes(skill.toLowerCase().trim()));
 
-  const handleApply = () => {
+  const calculateMatch = () => {
+    if (!user || !user.skills || user.skills.length === 0 || !job.skills || job.skills.length === 0) {
+      return 0;
+    }
+    return Math.round((matchingSkills.length / job.skills.length) * 100);
+  };
+
+  const matchScore = job.aiMatch !== undefined && job.aiMatch !== null ? job.aiMatch : calculateMatch();
+
+  const handleApply = async () => {
     if (isApplied) return;
-    applyToJob(job.id);
+
+    const { value: coverLetter } = await Swal.fire({
+      title: 'Apply for this Role',
+      input: 'textarea',
+      inputLabel: 'Short Cover Letter (Optional)',
+      inputPlaceholder: 'Introduce yourself and tell the recruiter why you are a great fit...',
+      showCancelButton: true,
+      confirmButtonText: 'Submit Application',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#4f46e5',
+      cancelButtonColor: '#64748b',
+      reverseButtons: true,
+    });
+
+    if (coverLetter !== undefined) {
+      try {
+        await applyToJob(job.id, coverLetter || '');
+        Swal.fire({
+          icon: 'success',
+          title: 'Applied!',
+          text: 'Your application has been submitted successfully.',
+          confirmButtonColor: '#4f46e5',
+          timer: 1800,
+          showConfirmButton: false,
+        });
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Application Failed',
+          text: err?.response?.data?.message || 'Something went wrong.',
+          confirmButtonColor: '#4f46e5',
+        });
+      }
+    }
   };
 
   return (
@@ -196,7 +241,7 @@ export const JobDetails = () => {
               {/* Score visual badge */}
               <div className="flex items-center space-x-3.5 bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
                 <div className="text-center">
-                  <span className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{job.aiMatch || 60}%</span>
+                  <span className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{matchScore}%</span>
                   <span className="block text-[8px] text-slate-400 font-bold uppercase mt-0.5 tracking-wider">Score</span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-450 leading-relaxed">

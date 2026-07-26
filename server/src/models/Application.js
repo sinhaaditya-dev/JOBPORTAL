@@ -19,6 +19,10 @@ const ApplicationSchema = new mongoose.Schema({
     coverLetter:{
         type:String,
         trim:true
+    },
+    feedback:{
+        type:String,
+        default:""
     }
 },
 {

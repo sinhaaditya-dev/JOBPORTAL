@@ -109,12 +109,12 @@ export const EditJob = () => {
           <select
             value={type}
             onChange={(e)=>setType(e.target.value)}
-            className="w-full px-4 py-3 border rounded-xl"
+            className="w-full px-4 py-3 border rounded-xl bg-white dark:bg-slate-900 text-slate-750 dark:text-slate-300"
           >
-            <option>Full-time</option>
-            <option>Part-time</option>
-            <option>Internship</option>
-            <option>Contract</option>
+            <option value="full-time">Full-time</option>
+            <option value="part-time">Part-time</option>
+            <option value="internship">Internship</option>
+            <option value="contract">Contract</option>
           </select>
 
 
@@ -136,13 +136,17 @@ export const EditJob = () => {
           />
 
 
-          <input
-            type="text"
+          <select
             value={experience}
             onChange={(e)=>setExperience(e.target.value)}
-            placeholder="Experience"
-            className="w-full px-4 py-3 border rounded-xl"
-          />
+            className="w-full px-4 py-3 border rounded-xl bg-white dark:bg-slate-900 text-slate-750 dark:text-slate-300"
+          >
+            <option value="Fresher">Fresher / Intern</option>
+            <option value="1-2 Years">1-2 Years</option>
+            <option value="2-4 Years">2-4 Years</option>
+            <option value="4-6 Years">4-6 Years</option>
+            <option value="6+ Years">6+ Years</option>
+          </select>
 
 
           <input

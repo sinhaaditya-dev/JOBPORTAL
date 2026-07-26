@@ -63,7 +63,10 @@ const JobSchema  = new mongoose.Schema({
             default: ""
         }
     },
-
+    category: {
+        type: String,
+        default: "Software Development"
+    },
 },
 {
     timestamps:true

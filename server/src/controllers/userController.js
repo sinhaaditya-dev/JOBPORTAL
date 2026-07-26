@@ -22,7 +22,9 @@ const uploadResume = async (req, res) => {
 
         {
             folder: "jobportal/resumes",
-            resource_type: "raw"
+            resource_type: "auto",
+            use_filename: true,
+            unique_filename: true
         },
 
         (error, result) => {
@@ -52,6 +54,7 @@ const uploadResume = async (req, res) => {
         }
         user.resume.public_id = uploadResult.public_id;
         user.resume.url = uploadResult.secure_url;
+        user.resumeName = req.file.originalname;
 
         await user.save();
         // Step 4
@@ -101,7 +104,17 @@ const deleteResume = async (req, res) => {
         user.resume = {
             public_id:"",
             url:""
-        }
+        };
+        user.resumeName = "";
+        user.aiReport = {
+            atsScore: 0,
+            summary: [],
+            skills: [],
+            missingSkills: [],
+            strengths: [],
+            weaknesses: [],
+            recommendations: []
+        };
         // Step 5
         // Save User
         await user.save();
@@ -109,7 +122,8 @@ const deleteResume = async (req, res) => {
         // Send Success Response
         return res.status(200).json({
             success: true,
-            message: "Resume deleted successfully"
+            message: "Resume deleted successfully",
+            user
         });
 
     } catch (error) {
@@ -122,7 +136,37 @@ const deleteResume = async (req, res) => {
     }
 };
 
+// Update Profile details
+const updateProfile = async (req, res) => {
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            req.body,
+            { new: true, runValidators: true }
+        ).select("-password");
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            user
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
 module.exports = {
     uploadResume,
-    deleteResume
+    deleteResume,
+    updateProfile
 };

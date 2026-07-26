@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getCompanyLogo } from '../utils/logos';
@@ -21,14 +21,15 @@ import {
   FileText,
   LogOut,
   Trash2,
+  Loader2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Swal from "sweetalert2";
 export const EmployerDashboard = () => {
-  const { user, jobs, applications, postJob,updateJob, updateApplicationStatus, updateProfile, logout } = useAuth();
+  const { user, jobs, applications, postJob, updateJob, deleteJob, uploadJobLogo, uploadAvatar, updateApplicationStatus, updateProfile, getAIRejectionFeedback, logout } = useAuth();
   const navigate = useNavigate();
   
-  const employerCompany = user.companyName || user.company || 'Stripe';
+  const employerCompany = user.companyName || user.company || `${user.name || 'My'} Company`;
   
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedJobFilter, setSelectedJobFilter] = useState('All');
@@ -40,7 +41,7 @@ export const EmployerDashboard = () => {
   const [postType, setPostType] = useState('Full-time');
   const [postSalary, setPostSalary] = useState('');
   const [postCategory, setPostCategory] = useState('Software Development');
-  const [postExp, setPostExp] = useState('1-3 years');
+  const [postExp, setPostExp] = useState('1-2 Years');
   const [postSkills, setPostSkills] = useState('');
   const [postDesc, setPostDesc] = useState('');
   const [showPostSuccess, setShowPostSuccess] = useState(false);
@@ -57,6 +58,48 @@ export const EmployerDashboard = () => {
   const [editDesc, setEditDesc] = useState(user.companyDescription || 'Leading financial infrastructure for the internet.');
   const [showProfileSuccess, setShowProfileSuccess] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [generatingFeedback, setGeneratingFeedback] = useState(false);
+
+  // Backend stats states
+  const [stats, setStats] = useState({
+    totalJobs: 0,
+    activeJobs: 0,
+    closedJobs: 0,
+    totalApplicants: 0
+  });
+  const [recentJobsList, setRecentJobsList] = useState([]);
+  const [recentApplicationsList, setRecentApplicationsList] = useState([]);
+
+  useEffect(() => {
+    if (activeTab !== 'overview') return;
+
+    // Fetch Stats
+    api.get('/dashboard/stats')
+      .then(res => {
+        if (res.data && res.data.stats) {
+          setStats(res.data.stats);
+        }
+      })
+      .catch(err => console.error("Error fetching recruiter stats:", err));
+
+    // Fetch Recent Jobs
+    api.get('/dashboard/recent-jobs')
+      .then(res => {
+        if (res.data && res.data.jobs) {
+          setRecentJobsList(res.data.jobs);
+        }
+      })
+      .catch(err => console.error("Error fetching recent jobs:", err));
+
+    // Fetch Recent Applications
+    api.get('/dashboard/recent-applications')
+      .then(res => {
+        if (res.data && res.data.applications) {
+          setRecentApplicationsList(res.data.applications);
+        }
+      })
+      .catch(err => console.error("Error fetching recent applications:", err));
+  }, [activeTab, jobs, applications]);
 
   // Get jobs posted by this company
   const myJobs = jobs.filter(j => 
@@ -90,40 +133,30 @@ export const EmployerDashboard = () => {
     setLogoUploading(true);
 
     try {
-
-      const formData = new FormData();
-      formData.append('logo', file);
-
       if (myJobs.length > 0) {
-
         const targetJobId = myJobs[0].id || myJobs[0]._id;
-
-        await api.put(`/jobs/${targetJobId}/upload-logo`, formData, {
-          headers: { 
-            'Content-Type': 'multipart/form-data' 
-          }
+        const uploadRes = await uploadJobLogo(targetJobId, file);
+        const logoUrl = uploadRes?.companyLogo?.url || uploadRes?.url;
+        await updateProfile({ 
+          logoName: file.name,
+          avatar: logoUrl
         });
-
-        await updateProfile({ logoName: file.name });
-
-        await Swal.fire({
-          icon: "success",
-          title: "Uploaded!",
-          text: "Company logo uploaded successfully.",
-          timer: 1500,
-          showConfirmButton: false,
-        });
-
       } else {
-
-        Swal.fire({
-          icon: "warning",
-          title: "No Job Found",
-          text: "Please post a job first to upload a company logo.",
+        const avatarObj = await uploadAvatar(file);
+        const logoUrl = typeof avatarObj === 'object' ? avatarObj?.url : avatarObj;
+        await updateProfile({ 
+          logoName: file.name,
+          avatar: logoUrl
         });
-
       }
 
+      await Swal.fire({
+        icon: "success",
+        title: "Uploaded!",
+        text: "Company logo uploaded successfully.",
+        timer: 1800,
+        showConfirmButton: false,
+      });
     } catch (err) {
 
       console.error('Logo upload error:', err);
@@ -154,6 +187,34 @@ export const EmployerDashboard = () => {
   const activeApp = selectedAppId 
     ? filteredApps.find(app => app.id === selectedAppId) 
     : filteredApps[0];
+
+  // Dynamic job-specific skills matching and scoring
+  const activeJob = activeApp ? jobs.find(j => j.id === activeApp.jobId || j._id === activeApp.jobId) : null;
+  
+  const calculateJobMatchScore = () => {
+    if (!activeApp || !activeApp.candidateSkills || activeApp.candidateSkills.length === 0 || !activeJob || !activeJob.skills || activeJob.skills.length === 0) {
+      return activeApp?.candidateAtsScore || 70;
+    }
+    const userSkillsSet = new Set(activeApp.candidateSkills.map(s => s.toLowerCase().trim()));
+    let matchedCount = 0;
+    activeJob.skills.forEach(skill => {
+      if (userSkillsSet.has(skill.toLowerCase().trim())) {
+        matchedCount++;
+      }
+    });
+    return Math.round((matchedCount / activeJob.skills.length) * 100);
+  };
+  
+  const matchScore = activeApp ? calculateJobMatchScore() : 70;
+  
+  const jobSkills = activeJob?.skills || [];
+  const candidateSkills = activeApp?.candidateSkills || [];
+  const candidateSkillsSet = new Set(candidateSkills.map(s => s.toLowerCase().trim()));
+  const jobSkillsSet = new Set(jobSkills.map(s => s.toLowerCase().trim()));
+  
+  const matchingSkills = candidateSkills.filter(s => jobSkillsSet.has(s.toLowerCase().trim()));
+  const extraSkills = candidateSkills.filter(s => !jobSkillsSet.has(s.toLowerCase().trim()));
+  const missingSkills = jobSkills.filter(s => !candidateSkillsSet.has(s.toLowerCase().trim()));
 
   const handlePostJob = async (e) => {
     e.preventDefault();
@@ -242,7 +303,7 @@ export const EmployerDashboard = () => {
   if (!result.isConfirmed) return;
 
   try {
-    await api.delete(`/jobs/${jobId}`);
+    await deleteJob(jobId);
 
     await Swal.fire({
       icon: "success",
@@ -275,10 +336,19 @@ export const EmployerDashboard = () => {
     setSelectedAppId(appId);
   };
 
-  const triggerReject = (appId) => {
+  const triggerReject = async (appId) => {
     setRejectingAppId(appId);
-    setRejectFeedback('We reviewed your profile, but currently require additional hands-on experience in our specific backend tech stack (Spring Boot, microservices). We will keep your CV on file for future openings.');
+    setRejectFeedback('');
     setShowRejectModal(true);
+    setGeneratingFeedback(true);
+    try {
+      const feedback = await getAIRejectionFeedback(appId);
+      setRejectFeedback(feedback);
+    } catch (err) {
+      setRejectFeedback('We reviewed your profile, but currently require additional hands-on experience in our specific backend tech stack (Spring Boot, microservices). We will keep your CV on file for future openings.');
+    } finally {
+      setGeneratingFeedback(false);
+    }
   };
 
  const handleRejectSubmit = async () => {
@@ -348,8 +418,8 @@ export const EmployerDashboard = () => {
   };
 
   // Math metrics for overview
-  const totalApplicants = myApplications.length;
-  const activeJobsCount = myJobs.length;
+  const totalApplicants = stats.totalApplicants || myApplications.length;
+  const activeJobsCount = stats.activeJobs || myJobs.length;
   const shortlistedCount = myApplications.filter(a => a.status === 'Shortlisted').length;
   const rejectedCount = myApplications.filter(a => a.status === 'Rejected').length;
   const pendingCount = myApplications.filter(a => a.status === 'Reviewing').length;
@@ -378,7 +448,7 @@ export const EmployerDashboard = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-850 p-2.5 flex-shrink-0">
-              {getCompanyLogo(employerCompany, "w-8 h-8")}
+              {getCompanyLogo(employerCompany, "w-8 h-8", user.avatar || (myJobs.length > 0 ? myJobs[0].companyLogo?.url : ""))}
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white leading-tight">
@@ -561,6 +631,70 @@ export const EmployerDashboard = () => {
                     </div>
                   </div>
 
+                </div>
+
+                {/* Recent Activities Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Recent Jobs */}
+                  <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 text-left">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Recent Postings</h3>
+                      <p className="text-xs text-slate-400">Your latest published job openings</p>
+                    </div>
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                      {recentJobsList.length > 0 ? (
+                        recentJobsList.map(j => (
+                          <div key={j._id} className="flex justify-between items-center p-3 bg-slate-50/50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-850">
+                            <div>
+                              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{j.title}</h4>
+                              <span className="text-[10px] text-slate-450 font-semibold block">{j.location}</span>
+                            </div>
+                            <span className={`text-[9px] font-bold px-2.5 py-1 rounded-lg border ${j.isActive ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-650 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/10' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'}`}>
+                              {j.isActive ? 'Active' : 'Closed'}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-400 italic py-4 text-center">No recent jobs posted</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Recent Applications */}
+                  <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 text-left">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Recent Applicants</h3>
+                      <p className="text-xs text-slate-400">Latest candidates applying to your postings</p>
+                    </div>
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                      {recentApplicationsList.length > 0 ? (
+                        recentApplicationsList.map(app => (
+                          <div key={app._id} className="flex justify-between items-center p-3 bg-slate-50/50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-850">
+                            <div>
+                              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{app.applicant?.name || 'Applicant'}</h4>
+                              <span className="text-[10px] text-slate-450 font-semibold block">{app.job?.title || 'Job Opening'}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-1 rounded-lg">
+                                ATS: {app.applicant?.aiReport?.atsScore || 70}%
+                              </span>
+                              <span className={`text-[9px] font-bold px-2 py-1 rounded-lg border ${
+                                app.status === 'accepted'
+                                  ? 'bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 border-green-150'
+                                  : app.status === 'rejected'
+                                    ? 'bg-red-50 dark:bg-red-950/20 text-red-500 dark:text-red-450 border-red-150'
+                                    : 'bg-blue-50 dark:bg-blue-950/20 text-blue-500 dark:text-blue-400 border-blue-150'
+                              }`}>
+                                {app.status === 'accepted' ? 'Shortlisted' : app.status === 'rejected' ? 'Rejected' : 'Reviewing'}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-400 italic py-4 text-center">No recent applicants</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
               </div>
@@ -956,9 +1090,9 @@ export const EmployerDashboard = () => {
                           <div className="relative flex items-center justify-center w-20 h-20 flex-shrink-0">
                             <svg className="w-full h-full transform -rotate-90">
                               <circle cx="40" cy="40" r="32" className="stroke-slate-200 dark:stroke-slate-800 fill-none" strokeWidth="6" />
-                              <circle cx="40" cy="40" r="32" className="stroke-emerald-500 fill-none" strokeWidth="6" strokeDasharray={2 * Math.PI * 32} strokeDashoffset={2 * Math.PI * 32 * (1 - (activeApp.candidateAtsScore || 70) / 100)} strokeLinecap="round" />
+                              <circle cx="40" cy="40" r="32" className="stroke-emerald-500 fill-none" strokeWidth="6" strokeDasharray={2 * Math.PI * 32} strokeDashoffset={2 * Math.PI * 32 * (1 - matchScore / 100)} strokeLinecap="round" />
                             </svg>
-                            <span className="absolute text-sm font-black text-slate-800 dark:text-white">{activeApp.candidateAtsScore || 70}%</span>
+                            <span className="absolute text-sm font-black text-slate-800 dark:text-white">{matchScore}%</span>
                           </div>
                           
                           <div>
@@ -983,23 +1117,40 @@ export const EmployerDashboard = () => {
                         <div className="space-y-1.5">
                           <span className="text-xs font-bold text-slate-450 block uppercase tracking-wider">Candidate Skills Checklist:</span>
                           <div className="flex flex-wrap gap-1.5">
-                            {activeApp.candidateSkills && activeApp.candidateSkills.length > 0 ? (
-                              activeApp.candidateSkills.map(skill => (
-                                <span key={skill} className="inline-flex items-center text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-450 px-2.5 py-0.5 rounded border border-emerald-100 dark:border-emerald-900/10">
-                                  <CheckCircle2 size={10} className="mr-1 text-emerald-500" />
-                                  {skill}
-                                </span>
-                              ))
-                            ) : (
-                              ['React.js', 'JavaScript', 'HTML/CSS'].map(skill => (
-                                <span key={skill} className="inline-flex items-center text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-450 px-2.5 py-0.5 rounded border border-emerald-100 dark:border-emerald-900/10">
-                                  <CheckCircle2 size={10} className="mr-1 text-emerald-500" />
-                                  {skill}
-                                </span>
-                              ))
+                            {matchingSkills.map(skill => (
+                              <span key={skill} className="inline-flex items-center text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-450 px-2.5 py-0.5 rounded border border-emerald-100 dark:border-emerald-900/10">
+                                <CheckCircle2 size={10} className="mr-1 text-emerald-500" />
+                                {skill}
+                              </span>
+                            ))}
+                            {missingSkills.map(skill => (
+                              <span key={skill} className="inline-flex items-center text-[10px] font-bold bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-450 px-2.5 py-0.5 rounded border border-rose-100 dark:border-rose-900/10">
+                                <X size={10} className="mr-1 text-rose-500" />
+                                {skill} (Required)
+                              </span>
+                            ))}
+                            {extraSkills.map(skill => (
+                              <span key={skill} className="inline-flex items-center text-[10px] font-bold bg-slate-50 dark:bg-slate-900/40 text-slate-650 dark:text-slate-350 px-2.5 py-0.5 rounded border border-slate-200 dark:border-slate-850">
+                                {skill}
+                              </span>
+                            ))}
+                            {jobSkills.length === 0 && candidateSkills.length === 0 && (
+                              <span className="text-xs text-slate-400 italic">No skills specified</span>
                             )}
                           </div>
                         </div>
+
+                        {/* Cover Letter display */}
+                        {activeApp.coverLetter && (
+                          <div className="space-y-2">
+                            <span className="text-xs font-bold text-slate-450 block uppercase tracking-wider">Candidate Cover Letter:</span>
+                            <div className="bg-indigo-50/30 dark:bg-indigo-950/20 border border-indigo-100/60 dark:border-indigo-900/30 p-4 rounded-xl">
+                              <p className="text-xs text-slate-650 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium">
+                                {activeApp.coverLetter}
+                              </p>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Resume preview card */}
                         <div className="space-y-2">
@@ -1009,17 +1160,22 @@ export const EmployerDashboard = () => {
                               <div className="p-2 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-450 rounded-lg">
                                 <FileText size={16} />
                               </div>
-                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                {activeApp.candidateResume || 'Alex_Mercer_CV.pdf'}
+                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[200px]" title={activeApp.candidateResumeName || 'No_Resume_Uploaded.pdf'}>
+                                {activeApp.candidateResumeName || 'No_Resume_Uploaded.pdf'}
                               </span>
                             </div>
-                            <a
-                              href="#"
-                              onClick={(e) => { e.preventDefault(); alert("Mock download initiated."); }}
-                              className="text-[10px] text-emerald-600 dark:text-emerald-450 font-bold hover:underline"
-                            >
-                              Download Resume
-                            </a>
+                            {activeApp.candidateResume ? (
+                              <a
+                                href={activeApp.candidateResume}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-emerald-600 dark:text-emerald-450 font-bold hover:underline"
+                              >
+                                Download Resume
+                              </a>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 italic">Not Uploaded</span>
+                            )}
                           </div>
                         </div>
 
@@ -1182,14 +1338,34 @@ export const EmployerDashboard = () => {
                 Please enter the specific skills deficiencies or structural parsing issues you identified. This comment will display directly in the candidate's ATS feedback center to help them optimize their profile.
               </p>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-450 uppercase block tracking-wider">Feedback comments:</label>
-                <textarea
-                  rows="5"
-                  value={rejectFeedback}
-                  onChange={(e) => setRejectFeedback(e.target.value)}
-                  className="w-full text-xs p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-red-500 text-slate-905 dark:text-white leading-relaxed resize-none"
-                ></textarea>
+              <div className="space-y-1.5 relative">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-bold text-slate-450 uppercase block tracking-wider">Feedback comments:</label>
+                  {generatingFeedback && (
+                    <span className="flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-0.5 rounded-lg border border-emerald-100 dark:border-emerald-900/20 animate-pulse">
+                      <Sparkles size={11} className="mr-1 text-emerald-500 animate-pulse" />
+                      AI Writing...
+                    </span>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <textarea
+                    rows="5"
+                    value={rejectFeedback}
+                    onChange={(e) => setRejectFeedback(e.target.value)}
+                    disabled={generatingFeedback}
+                    placeholder="Provide detailed feedback comments..."
+                    className="w-full text-xs p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-red-500 text-slate-905 dark:text-white leading-relaxed resize-none disabled:text-slate-400 dark:disabled:text-slate-500 disabled:bg-slate-100/30 dark:disabled:bg-slate-950/30"
+                  ></textarea>
+
+                  {generatingFeedback && (
+                    <div className="absolute inset-0 bg-slate-100/10 dark:bg-slate-950/20 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-xl space-y-2">
+                      <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+                      <span className="text-[10px] font-extrabold text-slate-550 dark:text-slate-350">Gemini is drafting personalized advice...</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1204,7 +1380,8 @@ export const EmployerDashboard = () => {
               <button
                 type="button"
                 onClick={handleRejectSubmit}
-                className="px-4 py-2 bg-red-500 hover:bg-red-650 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
+                disabled={generatingFeedback || !rejectFeedback.trim()}
+                className="px-4 py-2 bg-red-500 hover:bg-red-650 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
               >
                 Confirm Rejection
               </button>

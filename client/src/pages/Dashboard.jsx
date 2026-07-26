@@ -23,6 +23,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { getCompanyLogo } from '../utils/logos';
+import api from '../utils/api';
 
 const defaultNotifications = [
   {
@@ -56,6 +57,26 @@ export const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedApp, setExpandedApp] = useState(null);
   const navigate = useNavigate();
+
+  const [stats, setStats] = useState({
+    totalApplications: 0,
+    acceptedCount: 0,
+    pendingCount: 0,
+    rejectedCount: 0,
+    savedJobs: 0
+  });
+
+  useEffect(() => {
+    if (loading || !user || user.role === 'Employer') return;
+    
+    api.get('/dashboard/student/stats')
+      .then(res => {
+        if (res.data && res.data.dashboard) {
+          setStats(res.data.dashboard);
+        }
+      })
+      .catch(err => console.error("Error fetching student stats:", err));
+  }, [loading, user]);
 
   useEffect(() => {
 
@@ -194,6 +215,26 @@ export const Dashboard = () => {
                   </div>
                 </div>
 
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 text-left">
+                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Total Applications</span>
+                    <span className="text-2xl font-black text-slate-800 dark:text-white block">{stats.totalApplications}</span>
+                  </div>
+                  <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 text-left">
+                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Shortlisted</span>
+                    <span className="text-2xl font-black text-green-600 dark:text-green-500 block">{stats.acceptedCount}</span>
+                  </div>
+                  <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 text-left">
+                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Under Review</span>
+                    <span className="text-2xl font-black text-blue-600 dark:text-blue-500 block">{stats.pendingCount}</span>
+                  </div>
+                  <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 text-left">
+                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Rejected</span>
+                    <span className="text-2xl font-black text-red-600 dark:text-red-500 block">{stats.rejectedCount}</span>
+                  </div>
+                </div>
+
                 {/* ATS Widget Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <ATSScoreCard 
@@ -306,19 +347,30 @@ export const Dashboard = () => {
                                 <td className="px-4 py-4 text-xs font-medium">{app.dateApplied}</td>
                                 <td className="px-4 py-4">{getStatusBadge(app.status)}</td>
                                 <td className="px-4 py-4 text-right">
-                                  {app.status === 'Rejected' ? (
-                                    <button
-                                      onClick={() => toggleExpand(app.id)}
-                                      className="text-xs font-bold text-red-500 hover:text-red-650 hover:underline flex items-center justify-end ml-auto cursor-pointer"
-                                    >
-                                      <span>AI Audit Feedback</span>
-                                      {expandedApp === app.id ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
-                                    </button>
-                                  ) : app.status === 'Shortlisted' ? (
-                                    <span className="text-xs font-semibold text-green-500">Interview Scheduled</span>
-                                  ) : (
-                                    <span className="text-xs font-semibold text-slate-400">Under Review</span>
-                                  )}
+                                  <div className="flex items-center justify-end gap-3">
+                                    {app.status === 'Rejected' ? (
+                                      <button
+                                        onClick={() => toggleExpand(app.id)}
+                                        className="text-xs font-bold text-red-500 hover:text-red-650 hover:underline flex items-center cursor-pointer"
+                                      >
+                                        <span>AI Audit Feedback</span>
+                                        {expandedApp === app.id ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
+                                      </button>
+                                    ) : app.status === 'Shortlisted' ? (
+                                      <span className="text-xs font-semibold text-green-500">Interview Scheduled</span>
+                                    ) : (
+                                      <span className="text-xs font-semibold text-slate-400">Under Review</span>
+                                    )}
+                                    {app.coverLetter && (
+                                      <button
+                                        onClick={() => toggleExpand(app.id + '-cover')}
+                                        className="text-xs font-bold text-indigo-500 hover:text-indigo-650 hover:underline flex items-center cursor-pointer"
+                                      >
+                                        <span>View Cover Letter</span>
+                                        {expandedApp === (app.id + '-cover') ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
+                                      </button>
+                                    )}
+                                  </div>
                                 </td>
                               </tr>
                               
@@ -334,13 +386,29 @@ export const Dashboard = () => {
                                       <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
                                         <p className="font-semibold text-slate-700 dark:text-slate-350">Reason & Deficiencies Identified:</p>
                                         <pre className="font-sans text-[11px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-lg whitespace-pre-line leading-relaxed">
-                                          {typeof app.feedback === 'object' ? app.feedback.reason : app.feedback}
+                                          {(app.feedback && typeof app.feedback === 'object') ? app.feedback.reason : (app.feedback || '')}
                                         </pre>
                                       </div>
                                       <div className="text-[10px] text-slate-400 flex items-center space-x-1 pt-1.5">
                                         <HelpCircle size={10} className="text-slate-400" />
                                         <span>Action: Upload an optimized copy targeting these criteria in the <strong>ATS Resume tab</strong>.</span>
                                       </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+
+                              {/* Expandable Cover Letter */}
+                              {app.coverLetter && expandedApp === (app.id + '-cover') && (
+                                <tr>
+                                  <td colSpan="4" className="px-4 py-3 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
+                                    <div className="p-3 space-y-1.5 text-left">
+                                      <div className="text-xs font-bold text-indigo-650 dark:text-indigo-400">
+                                        <span>Your Submitted Cover Letter</span>
+                                      </div>
+                                      <pre className="font-sans text-xs text-slate-600 dark:text-slate-350 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg whitespace-pre-wrap leading-relaxed">
+                                        {app.coverLetter}
+                                      </pre>
                                     </div>
                                   </td>
                                 </tr>
@@ -485,7 +553,7 @@ export const Dashboard = () => {
                         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3">
                           <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Feedback Breakdown:</span>
                           <pre className="font-sans text-xs text-slate-600 dark:text-slate-350 whitespace-pre-line leading-relaxed">
-                            {typeof app.feedback === 'object' ? app.feedback.reason : app.feedback}
+                            {(app.feedback && typeof app.feedback === 'object') ? app.feedback.reason : (app.feedback || '')}
                           </pre>
                         </div>
 

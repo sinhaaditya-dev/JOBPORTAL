@@ -13,7 +13,8 @@ const createJob = async(req,res) =>{
             experience,
             vacancies,
             isActive,
-            applicationDeadline
+            applicationDeadline,
+            category
         } = req.body;
 
         if(!title || !company || !description || !location || !salary || !skills || !experience){
@@ -35,6 +36,7 @@ const createJob = async(req,res) =>{
             vacancies,
             isActive,
             applicationDeadline,
+            category,
             // Recruiter ID from JWT middleware
             postedBy:req.user.id,
         });
@@ -288,7 +290,7 @@ const getApplicants = async (req, res) => {
         const applications = await Application.find({
             job:req.params.jobId
         })
-        .populate("applicant", "name email resume")
+        .populate("applicant", "name email resume resumeName title skills aiReport")
         .populate("job", "title company")
         .select("-__v")
         .sort({
@@ -362,8 +364,11 @@ const updateApplicationStatus = async(req,res) =>{
             })
         }
         // Step 7
-        // Update Status
+        // Update Status & Feedback
         application.status = status;
+        if (req.body.feedback !== undefined) {
+            application.feedback = req.body.feedback;
+        }
         // Step 8
         // Save
         await application.save();

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
 export const ATSScoreCard = ({ score = 0, skills = [], recommendedSkills = [], suggestions = [] }) => {
-  const hasSkills = skills && skills.length > 0;
+  const hasSkills = (skills && skills.length > 0) || score > 0;
 
   // SVG Math for Radial Gauge
   const radius = 50;

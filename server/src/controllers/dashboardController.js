@@ -118,7 +118,7 @@ const getRecentApplications = async(req,res) =>{
                 $in:jobIds
             }
         })
-        .populate("applicant","name email")
+        .populate("applicant","name email aiReport")
         .populate("job", "title company")
         .sort({
             createdAt:-1

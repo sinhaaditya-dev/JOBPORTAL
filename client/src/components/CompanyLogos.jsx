@@ -1,6 +1,27 @@
 import React from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export const CompanyLogos = () => {
+  const { jobs } = useAuth();
+
+  // Find all unique custom company logos from the active jobs list
+  const customLogos = [];
+  const seenCompanies = new Set();
+
+  if (jobs && jobs.length > 0) {
+    jobs.forEach(job => {
+      const companyName = job.company || '';
+      const logoUrl = job.companyLogo?.url || job.companyLogo || '';
+      if (logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' && !seenCompanies.has(companyName.toLowerCase())) {
+        seenCompanies.add(companyName.toLowerCase());
+        customLogos.push({
+          name: companyName,
+          url: logoUrl
+        });
+      }
+    });
+  }
+
   const logoItems = [
     // 1. Google
     <div key="google" className="flex items-center space-x-1.5 transition-transform hover:scale-[1.04] duration-200 select-none cursor-default shrink-0">
@@ -70,7 +91,21 @@ export const CompanyLogos = () => {
         <circle cx="12" cy="10" r="2.5" />
       </svg>
       <span className="font-bold text-[18px] text-[#FF5A5F] font-sans tracking-tight">airbnb</span>
-    </div>
+    </div>,
+
+    // Custom uploaded recruiter logos
+    ...customLogos.map(logo => (
+      <div key={logo.name} className="flex items-center space-x-2 transition-transform hover:scale-[1.04] duration-200 select-none cursor-default shrink-0">
+        <img
+          src={logo.url}
+          alt={logo.name}
+          className="w-7 h-7 object-contain rounded-xl border border-slate-200/80 dark:border-zinc-800 shadow-xs bg-white dark:bg-zinc-950 p-0.5 flex-shrink-0"
+        />
+        <span className="font-extrabold text-[17px] text-slate-800 dark:text-zinc-200 font-sans tracking-tight">
+          {logo.name}
+        </span>
+      </div>
+    ))
   ];
 
   return (

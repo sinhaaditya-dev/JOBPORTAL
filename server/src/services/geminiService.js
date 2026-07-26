@@ -29,7 +29,10 @@ const analyzeResume = async (resumeText) => {
     // Send Prompt To Gemini
     const response = await ai.models.generateContent({
         model: "gemini-3.6-flash",
-        contents:prompt
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json"
+        }
     });
 
     // Step 3
@@ -41,13 +44,36 @@ const analyzeResume = async (resumeText) => {
     // Convert Into JSON
     //Response will come in the form of string,so we convert into JSON
     //String -> object because frontend requires object 
-    const aiReport = JSON.parse(result);
+    const cleanResult = result.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+    const aiReport = JSON.parse(cleanResult);
     // Step 5
     // Return
     return aiReport;
 
 }
 
+const generateAIRejectionFeedback = async (jobTitle, jobDescription, candidateName, candidateSkills, candidateMissingSkills) => {
+    const prompt = `You are an expert HR Recruiter and Career Advisor.
+                    The candidate "${candidateName}" has applied for the job "${jobTitle}".
+                    Job Description: "${jobDescription}"
+                    Candidate's Skills: "${candidateSkills.join(", ") || 'Not specified'}"
+                    Missing Skills or areas of improvement: "${candidateMissingSkills.join(", ") || 'Not specified'}"
+                    
+                    Please write a polite, professional, encouraging, and constructive rejection feedback (around 80-120 words). 
+                    Acknowledge their application and their strengths (based on their skills), then politely explain what skills or qualifications they lack relative to the job requirements (highlighting ${candidateMissingSkills.join(", ") || 'required stack details'} if relevant). 
+                    Provide advice on what they can improve to be a better fit in the future.
+                    
+                    Format the output directly as raw text that can be copied/pasted into a rejection letter. Do not include markdown code block syntax (like \`\`\`), do not include subject line or header, just start directly with the greeting or feedback message.`;
+
+    const response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: prompt
+    });
+
+    return response.text.trim();
+}
+
 module.exports = {
-    analyzeResume
+    analyzeResume,
+    generateAIRejectionFeedback
 };

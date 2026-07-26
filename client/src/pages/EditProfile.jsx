@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
+import Swal from 'sweetalert2';
 import {
   Camera,
   User,
@@ -26,7 +27,7 @@ import {
 
 export const EditProfile = () => {
   const navigate = useNavigate();
-  const { user, updateProfile, uploadAvatar, uploadResume, logout } = useAuth();
+  const { user, updateProfile, uploadAvatar, uploadResume, deleteAvatar, deleteResume, logout } = useAuth();
 
   // Form state
   const [form, setForm] = useState({
@@ -83,8 +84,9 @@ export const EditProfile = () => {
           linkedin: p.linkedin || '',
           portfolio: p.portfolio || '',
         });
-        setAvatarPreview(p.avatar || '');
-        setCurrentResumeName(p.resumeName || '');
+        setAvatarPreview(p.avatar?.url || p.avatar || '');
+        const resumeNameParsed = p.resumeName || (p.resume?.url ? (p.resume.public_id ? p.resume.public_id.split('/').pop() + '.pdf' : 'Uploaded_Resume.pdf') : '');
+        setCurrentResumeName(resumeNameParsed);
       } catch {
         showToast('Failed to load profile data.', 'error');
       } finally {
@@ -146,6 +148,58 @@ export const EditProfile = () => {
       return;
     }
     setResumeFile(file);
+  };
+
+  // Delete Avatar
+  const handleDeleteAvatar = async () => {
+    const result = await Swal.fire({
+      title: "Remove Photo?",
+      text: "Are you sure you want to delete your profile picture?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, Remove",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await deleteAvatar();
+      setAvatarPreview('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80');
+      setAvatarFile(null);
+      showToast('Profile picture removed successfully.');
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to remove profile picture.', 'error');
+    }
+  };
+
+  // Delete Resume
+  const handleDeleteResume = async () => {
+    const result = await Swal.fire({
+      title: "Remove Resume?",
+      text: "Are you sure you want to delete your uploaded resume?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, Delete",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await deleteResume();
+      setCurrentResumeName('');
+      setResumeFile(null);
+      showToast('Resume removed successfully.');
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to remove resume.', 'error');
+    }
   };
 
   // Validation
@@ -319,6 +373,15 @@ export const EditProfile = () => {
                     <CheckCircle size={12} />
                     {avatarFile.name}
                   </p>
+                )}
+                {avatarPreview && avatarPreview !== 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80' && (
+                  <button
+                    onClick={handleDeleteAvatar}
+                    type="button"
+                    className="text-xs font-bold text-red-500 hover:text-red-650 hover:underline mt-2 flex items-center gap-1 cursor-pointer bg-transparent border-none outline-none"
+                  >
+                    Remove Photo
+                  </button>
                 )}
               </div>
             </div>
@@ -540,16 +603,34 @@ export const EditProfile = () => {
                   className="hidden"
                 />
               </label>
-              <div className="text-sm">
+              <div className="text-sm flex-1">
                 {resumeFile ? (
-                  <p className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                    <CheckCircle size={14} />
-                    {resumeFile.name}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                      <CheckCircle size={14} />
+                      {resumeFile.name}
+                    </p>
+                    <button
+                      onClick={() => setResumeFile(null)}
+                      type="button"
+                      className="text-xs text-red-500 font-bold hover:underline cursor-pointer bg-transparent border-none outline-none"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 ) : currentResumeName ? (
-                  <p className="text-slate-500 dark:text-slate-400">
-                    Current: <span className="font-semibold text-slate-700 dark:text-slate-200">{currentResumeName}</span>
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Current: <span className="font-semibold text-slate-700 dark:text-slate-200">{currentResumeName}</span>
+                    </p>
+                    <button
+                      onClick={handleDeleteResume}
+                      type="button"
+                      className="text-xs text-red-500 font-bold hover:underline cursor-pointer bg-transparent border-none outline-none"
+                    >
+                      Delete Resume
+                    </button>
+                  </div>
                 ) : (
                   <p className="text-slate-400">No resume uploaded. PDF or Word, max 10MB.</p>
                 )}

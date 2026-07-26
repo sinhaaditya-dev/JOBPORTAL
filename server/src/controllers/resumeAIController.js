@@ -72,6 +72,59 @@ const analyzeResumeController = async (req, res) => {
 
 }
 
+const generateAIRejectionFeedbackController = async (req, res) => {
+    try {
+        const { applicationId } = req.body;
+        if (!applicationId) {
+            return res.status(400).json({
+                success: false,
+                message: "Application ID is required"
+            });
+        }
+
+        const Application = require("../models/Application");
+        const Job = require("../models/Job");
+        const { generateAIRejectionFeedback } = require("../services/geminiService");
+
+        const application = await Application.findById(applicationId).populate("applicant").populate("job");
+        if (!application) {
+            return res.status(404).json({
+                success: false,
+                message: "Application not found"
+            });
+        }
+
+        const job = application.job;
+        const applicant = application.applicant;
+
+        const jobTitle = job.title;
+        const jobDescription = job.description || "";
+        const candidateName = applicant.name || "Candidate";
+        const candidateSkills = applicant.skills || [];
+        const candidateMissingSkills = applicant.aiReport?.missingSkills || [];
+
+        const feedback = await generateAIRejectionFeedback(
+            jobTitle, 
+            jobDescription, 
+            candidateName, 
+            candidateSkills, 
+            candidateMissingSkills
+        );
+
+        return res.status(200).json({
+            success: true,
+            feedback
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
 module.exports = {
-    analyzeResumeController
+    analyzeResumeController,
+    generateAIRejectionFeedbackController
 }

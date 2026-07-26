@@ -41,6 +41,20 @@ const UserSchema = new mongoose.Schema({
             default:""
         }
     },
+    title: { type: String, default: "" },
+    phone: { type: String, default: "" },
+    location: { type: String, default: "" },
+    resumeName: { type: String, default: "" },
+    bio: { type: String, default: "" },
+    skills: { type: [String], default: [] },
+    github: { type: String, default: "" },
+    linkedin: { type: String, default: "" },
+    portfolio: { type: String, default: "" },
+    industry: { type: String, default: "" },
+    companySize: { type: String, default: "" },
+    website: { type: String, default: "" },
+    companyDescription: { type: String, default: "" },
+    savedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Job" }],
     aiReport: {
         atsScore: Number,
         summary: [String],

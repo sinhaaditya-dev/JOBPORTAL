@@ -188,7 +188,10 @@ export const AuthProvider = ({ children }) => {
           const profileRes = await api.get('/auth/profile');
           const mapped = mapUser(profileRes.data.user);
           setUser(mapped);
-          setSavedJobs(profileRes.data.user.savedJobs || []);
+          const savedRes = await api.get('/saved-jobs');
+          setSavedJobs(
+            savedRes.data.savedJobs.map(job => job._id)
+          );
           await fetchUserData(mapped, token);
         } catch (err) {
           console.error("Session bootstrap failed:", err);
@@ -212,7 +215,10 @@ export const AuthProvider = ({ children }) => {
       setToken(userToken);
       const mapped = mapUser(backendUser);
       setUser(mapped);
-      setSavedJobs(backendUser.savedJobs || []);
+      const savedRes = await api.get("/saved-jobs");
+      setSavedJobs(
+        savedRes.data.savedJobs.map(job => job._id)
+      );
       await fetchUserData(mapped, userToken);
       return true;
     } catch (error) {
@@ -396,17 +402,42 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Toggle save job (missing backend endpoint fallback)
+  // Toggle save job 
   const toggleSaveJob = async (jobId) => {
-    setSavedJobs(prev => 
-      prev.includes(jobId) ? prev.filter(id => id !== jobId) : [...prev, jobId]
-    );
-    try {
-      await api.put(`/users/save-job/${jobId}`);
-    } catch (error) {
-      // Ignored: save job backend API missing
+
+  try {
+
+    if (savedJobs.includes(jobId)) {
+
+      // Remove Saved Job
+      await api.delete(`/saved-jobs/${jobId}`);
+
+      setSavedJobs(prev =>
+        prev.filter(id => id !== jobId)
+      );
+
+    } else {
+
+      // Save Job
+      await api.post(`/saved-jobs/${jobId}`);
+
+      setSavedJobs(prev => [
+        ...prev,
+        jobId
+      ]);
+
     }
+
     return true;
+
+  } catch (error) {
+
+    console.error("Failed to save/remove job:", error);
+
+    throw error;
+
+  }
+
   };
 
   // Create job via POST /api/jobs

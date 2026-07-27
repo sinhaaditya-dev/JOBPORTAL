@@ -188,10 +188,13 @@ export const AuthProvider = ({ children }) => {
           const profileRes = await api.get('/auth/profile');
           const mapped = mapUser(profileRes.data.user);
           setUser(mapped);
-          const savedRes = await api.get('/saved-jobs');
-          setSavedJobs(
-            savedRes.data.savedJobs.map(job => job._id)
-          );
+          if (mapped.role === "Job Seeker") {
+             const savedRes = await api.get("/saved-jobs");
+             setSavedJobs(
+                savedRes.data.savedJobs.map(job => job._id)
+              );
+          }
+
           await fetchUserData(mapped, token);
         } catch (err) {
           console.error("Session bootstrap failed:", err);
@@ -215,10 +218,12 @@ export const AuthProvider = ({ children }) => {
       setToken(userToken);
       const mapped = mapUser(backendUser);
       setUser(mapped);
-      const savedRes = await api.get("/saved-jobs");
-      setSavedJobs(
-        savedRes.data.savedJobs.map(job => job._id)
-      );
+      if (mapped.role === "Job Seeker") {
+        const savedRes = await api.get("/saved-jobs");
+        setSavedJobs(
+          savedRes.data.savedJobs.map(job => job._id)
+        );
+      }
       await fetchUserData(mapped, userToken);
       return true;
     } catch (error) {

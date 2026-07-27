@@ -1,297 +1,586 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { mockUserData, mockJobs } from '../data/mockData';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import api from '../utils/api';
 
 const AuthContext = createContext();
 
-const defaultApplications = [
-  {
-    id: 'app_1',
-    jobId: 'job2',
-    candidateName: 'Alex Mercer',
-    candidateEmail: 'alex.mercer@gmail.com',
-    candidateTitle: 'Full Stack Software Engineer',
-    candidateSkills: ['Java', 'Spring Boot', 'MongoDB', 'JavaScript', 'React.js'],
-    candidateResume: 'Alex_Mercer_CV.pdf',
-    candidateAtsScore: 78,
-    dateApplied: 'May 24, 2026',
-    status: 'Reviewing',
-    feedback: null,
-    company: 'Google'
-  },
-  {
-    id: 'app_2',
-    jobId: 'job3',
-    candidateName: 'Alex Mercer',
-    candidateEmail: 'alex.mercer@gmail.com',
-    candidateTitle: 'Full Stack Software Engineer',
-    candidateSkills: ['Java', 'Spring Boot', 'MongoDB', 'JavaScript', 'React.js'],
-    candidateResume: 'Alex_Mercer_CV.pdf',
-    candidateAtsScore: 78,
-    dateApplied: 'May 22, 2026',
-    status: 'Shortlisted',
-    feedback: 'Great fit! The technical interview is scheduled for next Monday.',
-    company: 'Meta'
-  },
-  {
-    id: 'app_3',
-    jobId: 'job4',
-    candidateName: 'Alex Mercer',
-    candidateEmail: 'alex.mercer@gmail.com',
-    candidateTitle: 'Full Stack Software Engineer',
-    candidateSkills: ['Java', 'Spring Boot', 'MongoDB', 'JavaScript', 'React.js'],
-    candidateResume: 'Alex_Mercer_CV.pdf',
-    candidateAtsScore: 78,
-    dateApplied: 'May 18, 2026',
-    status: 'Rejected',
-    feedback: 'Required MERN stack experience missing\nResume formatting needs improvement\nProjects section is weak',
-    company: 'Netflix'
-  },
-  {
-    id: 'app_4',
-    jobId: 'job1',
-    candidateName: 'Sarah Jenkins',
-    candidateEmail: 'sarah.j@gmail.com',
-    candidateTitle: 'Senior React Developer',
-    candidateSkills: ['React.js', 'TypeScript', 'Tailwind CSS', 'Redux', 'REST APIs'],
-    candidateResume: 'Sarah_Jenkins_CV.pdf',
-    candidateAtsScore: 94,
-    dateApplied: 'May 28, 2026',
-    status: 'Reviewing',
-    feedback: null,
-    company: 'Stripe'
-  },
-  {
-    id: 'app_5',
-    jobId: 'job1',
-    candidateName: 'David Chen',
-    candidateEmail: 'dchen@gmail.com',
-    candidateTitle: 'React Developer',
-    candidateSkills: ['React.js', 'JavaScript', 'CSS'],
-    candidateResume: 'David_Chen_Resume.pdf',
-    candidateAtsScore: 82,
-    dateApplied: 'May 27, 2026',
-    status: 'Shortlisted',
-    feedback: 'Excellent UI portfolio.',
-    company: 'Stripe'
-  },
-  {
-    id: 'app_6',
-    jobId: 'job5',
-    candidateName: 'Emily Rodriguez',
-    candidateEmail: 'emily.r@gmail.com',
-    candidateTitle: 'Backend Engineer',
-    candidateSkills: ['Java', 'Spring Boot', 'SQL'],
-    candidateResume: 'Emily_Rodriguez_CV.pdf',
-    candidateAtsScore: 71,
-    dateApplied: 'May 25, 2026',
-    status: 'Rejected',
-    feedback: 'Needs more architectural leadership experience.',
-    company: 'Amazon'
+export const formatSalary = (salaryObj) => {
+  if (!salaryObj) return "Not specified";
+  if (typeof salaryObj === 'string') return salaryObj;
+  if (salaryObj.min !== undefined && salaryObj.max !== undefined) {
+    if (salaryObj.min === salaryObj.max) {
+      return `$${salaryObj.min.toLocaleString()}`;
+    }
+    return `$${salaryObj.min.toLocaleString()} - $${salaryObj.max.toLocaleString()}`;
   }
-];
+  if (salaryObj.min !== undefined) return `$${salaryObj.min.toLocaleString()}+`;
+  return "Not specified";
+};
+
+export const parseSalary = (salaryInput) => {
+  if (!salaryInput) return { min: 0, max: 0 };
+  if (typeof salaryInput === 'object') {
+    return {
+      min: Number(salaryInput.min) || 0,
+      max: Number(salaryInput.max) || 0
+    };
+  }
+  const str = String(salaryInput);
+  const clean = str.replace(/[$,\s]/g, '');
+  const parts = clean.split('-');
+  if (parts.length === 2) {
+    return {
+      min: parseInt(parts[0], 10) || 0,
+      max: parseInt(parts[1], 10) || 0
+    };
+  }
+  const val = parseInt(clean, 10) || 0;
+  return { min: val, max: val };
+};
+
+const mapExperience = (exp) => {
+  if (!exp) return 'Fresher';
+  const str = String(exp).toLowerCase();
+  if (str.includes('fresher') || str.includes('intern')) return 'Fresher';
+  if (str.includes('0-1') || str.includes('1-2') || str.includes('1-3')) return '1-2 Years';
+  if (str.includes('2-4') || str.includes('3-5')) return '2-4 Years';
+  if (str.includes('4-6') || str.includes('5+')) return '4-6 Years';
+  if (str.includes('6+')) return '6+ Years';
+  return 'Fresher';
+};
+
+const mapJobType = (type) => {
+  if (!type) return 'full-time';
+  const str = String(type).toLowerCase();
+  if (str.includes('part')) return 'part-time';
+  if (str.includes('contract')) return 'contract';
+  if (str.includes('intern')) return 'internship';
+  return 'full-time';
+};
+
+const mapUser = (backendUser) => {
+  if (!backendUser) return null;
+  return {
+    ...backendUser,
+    id: backendUser._id || backendUser.id,
+    role: backendUser.role === 'recruiter' ? 'Employer' : 'Job Seeker',
+    avatar: backendUser.avatar?.url || (typeof backendUser.avatar === 'string' ? backendUser.avatar : '') || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80',
+    resume: backendUser.resume || null,
+    resumeName: backendUser.resumeName || (backendUser.resume?.url ? (backendUser.resume.public_id ? backendUser.resume.public_id.split('/').pop() + '.pdf' : 'Uploaded_Resume.pdf') : ''),
+    resumeUrl: backendUser.resume?.url || '',
+    resumeSize: backendUser.resumeSize || '',
+    resumeUploadDate: backendUser.resumeUploadDate || '',
+    atsScore: backendUser.aiReport?.atsScore || backendUser.atsScore || 0,
+    recommendedSkills: backendUser.aiReport?.missingSkills || [],
+    suggestions: backendUser.aiReport?.recommendations || [],
+    profileCompletion: backendUser.profileCompletion || 40,
+    skills: (backendUser.skills && backendUser.skills.length > 0) ? backendUser.skills : (backendUser.aiReport?.skills || []),
+    applications: []
+  };
+};
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('user');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return mockUserData;
-      }
-    }
-    return mockUserData;
-  });
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [jobs, setJobs] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [savedJobs, setSavedJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [savedJobs, setSavedJobs] = useState(['job1', 'job5']);
+  // Fetch candidate/recruiter dynamic data
+  const fetchUserData = useCallback(async (currentUser, currentToken) => {
+    if (!currentUser || !currentToken) return;
 
-  const [jobs, setJobs] = useState(() => {
-    const saved = localStorage.getItem('jobs');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return mockJobs;
-      }
-    }
-    return mockJobs;
-  });
-
-  const [applications, setApplications] = useState(() => {
-    const saved = localStorage.getItem('applications');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return defaultApplications;
-      }
-    }
-    return defaultApplications;
-  });
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('user');
-    }
-  }, [user]);
-
-  useEffect(() => {
-    localStorage.setItem('jobs', JSON.stringify(jobs));
-  }, [jobs]);
-
-  useEffect(() => {
-    localStorage.setItem('applications', JSON.stringify(applications));
-  }, [applications]);
-
-  const login = (email, password, role = 'Job Seeker') => {
-    setUser({
-      ...mockUserData,
-      email: email,
-      role: role,
-      name: role === 'Employer' ? 'Tech Recruiter' : mockUserData.name,
-      title: role === 'Employer' ? 'Lead Talent Acquisition' : mockUserData.title,
-    });
-    return true;
-  };
-
-  const register = (name, email, password, role) => {
-    setUser({
-      name,
-      email,
-      role,
-      phone: '+1 (555) 000-0000',
-      location: 'San Francisco, CA',
-      title: role === 'Employer' ? 'HR Manager' : 'Software Engineer',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80',
-      skills: [],
-      resumeName: '',
-      resumeSize: '',
-      resumeUploadDate: '',
-      atsScore: 0,
-      profileCompletion: 40,
-      applications: []
-    });
-    return true;
-  };
-
-  const loginWithGoogle = (googleUserData) => {
-    setUser(googleUserData);
-    return true;
-  };
-
-  const logout = () => {
-    setUser(null);
-  };
-
-  const updateProfile = (updatedData) => {
-    setUser(prev => ({
-      ...prev,
-      ...updatedData
-    }));
-  };
-
-  const applyToJob = (jobId, jobTitle, company) => {
-    if (!user) return;
-    const appId = `app_${Date.now()}`;
-    const newApplication = {
-      id: appId,
-      jobId,
-      jobTitle,
-      company,
-      dateApplied: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-      status: 'Reviewing',
-      feedback: null
-    };
-
-    // Update global applications
-    const globalApp = {
-      ...newApplication,
-      candidateName: user.name,
-      candidateEmail: user.email,
-      candidateTitle: user.title || 'Software Engineer',
-      candidateSkills: user.skills || [],
-      candidateResume: user.resumeName || 'Resume.pdf',
-      candidateAtsScore: user.atsScore || 70,
-    };
-    setApplications(prev => [globalApp, ...prev]);
-
-    // Update local user state
-    setUser(prev => ({
-      ...prev,
-      applications: [newApplication, ...prev.applications]
-    }));
-  };
-
-  const uploadResume = (fileName, fileSize) => {
-    if (!user) return;
-    setUser(prev => ({
-      ...prev,
-      resumeName: fileName,
-      resumeSize: fileSize,
-      resumeUploadDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-      atsScore: 78,
-      skills: Array.from(new Set([...prev.skills, 'Java', 'Spring Boot', 'MongoDB'])),
-      profileCompletion: Math.min(prev.profileCompletion + 15, 100)
-    }));
-  };
-
-  const toggleSaveJob = (jobId) => {
-    setSavedJobs(prev => 
-      prev.includes(jobId) 
-        ? prev.filter(id => id !== jobId) 
-        : [...prev, jobId]
-    );
-  };
-
-  const postJob = (jobData) => {
-    const newJob = {
-      id: `job_${Date.now()}`,
-      postedTime: 'Just now',
-      ...jobData,
-    };
-    setJobs(prev => [newJob, ...prev]);
-    return newJob;
-  };
-
-  const updateApplicationStatus = (appId, status, feedback) => {
-    setApplications(prev => prev.map(app => 
-      app.id === appId ? { ...app, status, feedback } : app
-    ));
-
-    const targetApp = applications.find(a => a.id === appId);
-    if (targetApp) {
-      const applicantEmail = targetApp.candidateEmail;
-      
-      if (user && user.email === applicantEmail) {
-        setUser(prev => ({
-          ...prev,
-          applications: prev.applications.map(app => 
-            app.id === appId || (app.jobId === targetApp.jobId && app.jobTitle === targetApp.jobTitle)
-              ? { ...app, status, feedback } 
-              : app
-          )
+    try {
+      if (currentUser.role === 'Employer') {
+        // Fetch Employer's posted jobs via GET /api/jobs/myjobs
+        const jobsRes = await api.get('/jobs/myjobs');
+        const formattedMyJobs = (jobsRes.data.jobs || []).map(j => ({
+          ...j,
+          id: j._id,
+          type: j.jobType || j.type || 'Full-time',
+          salary: formatSalary(j.salary),
+          postedTime: j.createdAt ? new Date(j.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Recently'
         }));
-      } else {
-        const savedUserStr = localStorage.getItem('user');
-        if (savedUserStr) {
-          try {
-            const savedUser = JSON.parse(savedUserStr);
-            if (savedUser.email === applicantEmail) {
-              const updatedApps = savedUser.applications.map(app => 
-                app.id === appId || app.jobId === targetApp.jobId
-                  ? { ...app, status, feedback }
-                  : app
-              );
-              localStorage.setItem('user', JSON.stringify({ ...savedUser, applications: updatedApps }));
-            }
-          } catch (e) {
-            console.error('Error syncing localStorage applicant data:', e);
+
+        // Sync employer's posted jobs into jobs state
+        setJobs(formattedMyJobs);
+        
+        // Fetch applicants for each job via GET /api/applications/job/:jobId
+        const appsPromises = formattedMyJobs.map(job => 
+          api.get(`/jobs/${job.id}/applicants`).catch(() => ({ data: { applications: [] } }))
+        );
+        const appsResponses = await Promise.all(appsPromises);
+        
+        const allApplicants = [];
+        appsResponses.forEach(res => {
+          if (res.data && res.data.applications) {
+            res.data.applications.forEach(app => {
+              allApplicants.push({
+                id: app._id,
+                jobId: app.job?._id || app.job,
+                jobTitle: app.job?.title || "Role",
+                company: app.job?.company || currentUser.companyName || "Company",
+                candidateName: app.applicant?.name || "Candidate",
+                candidateEmail: app.applicant?.email || "",
+                candidateTitle: app.applicant?.title || "Software Engineer",
+                candidateSkills: app.applicant?.skills || [],
+                candidateResume: app.applicant?.resume?.url || "",
+                candidateResumeName: app.applicant?.resumeName || (app.applicant?.resume?.url ? 'Uploaded_Resume.pdf' : ''),
+                candidateAtsScore: app.applicant?.aiReport?.atsScore || app.applicant?.atsScore || 70,
+                dateApplied: new Date(app.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+                status: app.status === 'accepted' ? 'Shortlisted' : (app.status === 'rejected' ? 'Rejected' : 'Reviewing'),
+                feedback: app.feedback || null,
+                coverLetter: app.coverLetter || ''
+              });
+            });
           }
+        });
+        
+        setApplications(allApplicants);
+      } else {
+        // Candidate profile - fetch applications via GET /api/applications/myapplications
+        const appsRes = await api.get('/applications/myapplications');
+        const myAppsMapped = (appsRes.data.applications || []).map(app => ({
+          id: app._id,
+          jobId: app.job?._id || app.job,
+          jobTitle: app.job?.title || "Role",
+          company: app.job?.company || "Company",
+          dateApplied: new Date(app.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+          status: app.status === 'accepted' ? 'Shortlisted' : (app.status === 'rejected' ? 'Rejected' : 'Reviewing'),
+          feedback: app.feedback || null,
+          coverLetter: app.coverLetter || ''
+        }));
+
+        setUser(prev => prev ? {
+          ...prev,
+          applications: myAppsMapped
+        } : null);
+      }
+    } catch (err) {
+      console.error("Error loading user context data:", err);
+    }
+  }, []);
+
+  // Initialize and load default job listings via GET /api/jobs
+  const initializeJobs = useCallback(async () => {
+    try {
+      const res = await api.get('/jobs');
+      const loadedJobs = (res.data.jobs || []).map(j => ({
+        ...j,
+        id: j._id,
+        type: j.jobType || j.type || 'Full-time',
+        salary: formatSalary(j.salary),
+        postedTime: j.createdAt ? new Date(j.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Recently'
+      }));
+      setJobs(loadedJobs);
+    } catch (err) {
+      console.error("Error loading jobs:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    const bootstrap = async () => {
+      setLoading(true);
+      await initializeJobs();
+      
+      if (token) {
+        try {
+          const profileRes = await api.get('/auth/profile');
+          const mapped = mapUser(profileRes.data.user);
+          setUser(mapped);
+          const savedRes = await api.get('/saved-jobs');
+          setSavedJobs(
+            savedRes.data.savedJobs.map(job => job._id)
+          );
+          await fetchUserData(mapped, token);
+        } catch (err) {
+          console.error("Session bootstrap failed:", err);
+          localStorage.removeItem('token');
+          setToken(null);
+          setUser(null);
         }
       }
+      setLoading(false);
+    };
+
+    bootstrap();
+  }, [token, initializeJobs, fetchUserData]);
+
+  // Login via POST /api/auth/login
+  const login = async (email, password) => {
+    try {
+      const res = await api.post('/auth/login', { email, password });
+      const { token: userToken, user: backendUser } = res.data;
+      localStorage.setItem('token', userToken);
+      setToken(userToken);
+      const mapped = mapUser(backendUser);
+      setUser(mapped);
+      const savedRes = await api.get("/saved-jobs");
+      setSavedJobs(
+        savedRes.data.savedJobs.map(job => job._id)
+      );
+      await fetchUserData(mapped, userToken);
+      return true;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
     }
+  };
+
+  // Register via POST /api/auth/register
+  const register = async (name, email, password, role) => {
+    try {
+      const backendRole = role.toLowerCase().includes('employer') || role === 'recruiter' ? 'recruiter' : 'student';
+      await api.post('/auth/register', { name, email, password, role: backendRole });
+      return await login(email, password);
+    } catch (error) {
+      console.error("Registration failed:", error);
+      throw error;
+    }
+  };
+
+
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+    setUser(null);
+    setApplications([]);
+    setSavedJobs([]);
+  };
+
+  // Fallback for missing backend profile update endpoint
+  const updateProfile = async (updatedData) => {
+  try {
+
+    const res = await api.put("/users/profile", updatedData);
+
+    const mapped = mapUser(res.data.user);
+
+    setUser(prev => ({
+      ...prev,
+      ...mapped,
+      applications: prev?.applications || []
+    }));
+
+    return true;
+
+  } catch (error) {
+
+    console.error("Profile update failed:", error);
+
+    throw error;
+
+  }
+  };
+
+  // Apply to job via POST /api/applications/:jobId
+  const applyToJob = async (jobId, coverLetter = '') => {
+    try {
+      await api.post(`/applications/${jobId}`, { coverLetter });
+      await initializeJobs();
+      if (user) await fetchUserData(user, token);
+      return true;
+    } catch (error) {
+      console.error("Job application failed:", error);
+      throw error;
+    }
+  };
+
+  // Withdraw application via DELETE /api/applications/:applicationId
+  const withdrawApplication = async (applicationId) => {
+    try {
+      await api.delete(`/applications/${applicationId}`);
+      if (user) await fetchUserData(user, token);
+      return true;
+    } catch (error) {
+      console.error("Withdraw application failed:", error);
+      throw error;
+    }
+  };
+
+  // Upload resume via PUT /api/users/upload-resume
+  const uploadResume = async (file, metadata = {}) => {
+    try {
+      const formData = new FormData();
+      formData.append('resume', file);
+
+      const res = await api.put('/users/upload-resume', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      // Immediately trigger AI analysis for ATS report
+      const aiRes = await api.post('/ai/analyze');
+
+      const resumeObj = res.data.resume;
+      const aiReport = aiRes?.data?.aiReport;
+
+      setUser(prev => {
+        if (!prev) return null;
+        const updatedUser = {
+          ...prev,
+          resume: resumeObj,
+          resumeName: file.name,
+          resumeUrl: resumeObj?.url || '',
+          atsScore: aiReport?.atsScore || 0,
+          recommendedSkills: aiReport?.missingSkills || [],
+          suggestions: aiReport?.recommendations || []
+        };
+        updatedUser.skills = (prev.skills && prev.skills.length > 0) ? prev.skills : (aiReport?.skills || []);
+        return updatedUser;
+      });
+
+      if (user) await fetchUserData(user, token);
+      
+      return {
+        ...res.data,
+        user: {
+          resume: resumeObj,
+          atsScore: aiReport?.atsScore || 0,
+          skills: (user?.skills && user.skills.length > 0) ? user.skills : (aiReport?.skills || []),
+          recommendedSkills: aiReport?.missingSkills || [],
+          suggestions: aiReport?.recommendations || []
+        }
+      };
+    } catch (error) {
+      console.error("Resume upload failed:", error);
+      throw error;
+    }
+  };
+
+  // Upload avatar
+  const uploadAvatar = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const res = await api.put('/profile/upload-avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const avatarObj = res.data.avatar;
+      const avatarUrl = avatarObj?.url || '';
+      setUser(prev => prev ? { ...prev, avatar: avatarUrl } : null);
+      return avatarObj;
+    } catch (error) {
+      const avatarUrl = URL.createObjectURL(file);
+      setUser(prev => prev ? { ...prev, avatar: avatarUrl } : null);
+      return avatarUrl;
+    }
+  };
+
+  // Delete resume via DELETE /api/users/delete-resume
+  const deleteResume = async () => {
+    try {
+      const res = await api.delete('/users/delete-resume');
+      const mapped = mapUser(res.data.user);
+      setUser(prev => prev ? {
+        ...prev,
+        ...mapped,
+        applications: prev?.applications || []
+      } : null);
+      if (user) await fetchUserData(mapped, token);
+      return true;
+    } catch (error) {
+      console.error("Resume deletion failed:", error);
+      throw error;
+    }
+  };
+
+  // Delete avatar via DELETE /api/profile/delete-avatar
+  const deleteAvatar = async () => {
+    try {
+      await api.delete('/profile/delete-avatar');
+      setUser(prev => prev ? {
+        ...prev,
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80'
+      } : null);
+      return true;
+    } catch (error) {
+      console.error("Avatar deletion failed:", error);
+      throw error;
+    }
+  };
+
+  // Toggle save job 
+  const toggleSaveJob = async (jobId) => {
+
+  try {
+
+    if (savedJobs.includes(jobId)) {
+
+      // Remove Saved Job
+      await api.delete(`/saved-jobs/${jobId}`);
+
+      setSavedJobs(prev =>
+        prev.filter(id => id !== jobId)
+      );
+
+    } else {
+
+      // Save Job
+      await api.post(`/saved-jobs/${jobId}`);
+
+      setSavedJobs(prev => [
+        ...prev,
+        jobId
+      ]);
+
+    }
+
+    return true;
+
+  } catch (error) {
+
+    console.error("Failed to save/remove job:", error);
+
+    throw error;
+
+  }
+
+  };
+
+  // Create job via POST /api/jobs
+  const postJob = async (jobData) => {
+    try {
+      const salaryObj = parseSalary(jobData.salary);
+      const payload = {
+        title: jobData.title,
+        company: jobData.company,
+        description: jobData.description,
+        location: jobData.location,
+        salary: salaryObj,
+        skills: Array.isArray(jobData.skills) ? jobData.skills : (jobData.skills ? [jobData.skills] : ['JavaScript']),
+        jobType: mapJobType(jobData.jobType || jobData.type),
+        experience: mapExperience(jobData.experience),
+        category: jobData.category || 'Software Development'
+      };
+
+      const res = await api.post('/jobs', payload);
+
+      if (!res.data || !res.data.success) {
+        throw new Error(res.data?.message || "Failed to post job.");
+      }
+
+      await initializeJobs();
+      if (user && token) {
+        await fetchUserData(user, token);
+      }
+      return res.data.job;
+    } catch (error) {
+      console.error("ERROR posting job:", error?.response?.data || error.message);
+      throw error;
+    }
+  };
+
+  // Update job via PUT /api/jobs/:id
+  const updateJob = async (jobId, jobData) => {
+    try {
+      const salaryObj = parseSalary(jobData.salary);
+      const payload = {
+        ...jobData,
+        salary: salaryObj,
+        skills: Array.isArray(jobData.skills) ? jobData.skills : (jobData.skills ? [jobData.skills] : ['JavaScript']),
+        jobType: mapJobType(jobData.jobType || jobData.type),
+        experience: mapExperience(jobData.experience)
+      };
+      const res = await api.put(`/jobs/${jobId}`, payload);
+      await initializeJobs();
+      if (user && token) await fetchUserData(user, token);
+      return res.data.job;
+    } catch (error) {
+      console.error("ERROR updating job:", error?.response?.data || error.message);
+      throw error;
+    }
+  };
+
+  // Delete job via DELETE /api/jobs/:id
+  const deleteJob = async (jobId) => {
+    try {
+      await api.delete(`/jobs/${jobId}`);
+      await initializeJobs();
+      if (user && token) await fetchUserData(user, token);
+      return true;
+    } catch (error) {
+      console.error("ERROR deleting job:", error?.response?.data || error.message);
+      throw error;
+    }
+  };
+
+  // Upload company logo via PUT /api/jobs/:jobId/upload-logo
+  const uploadJobLogo = async (jobId, logoFile) => {
+    try {
+      const formData = new FormData();
+      formData.append('logo', logoFile);
+      const res = await api.put(`/jobs/${jobId}/upload-logo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      await initializeJobs();
+      return res.data;
+    } catch (error) {
+      console.error("ERROR uploading logo:", error?.response?.data || error.message);
+      throw error;
+    }
+  };
+
+  const getAIRejectionFeedback = async (applicationId) => {
+    try {
+      const res = await api.post('/ai/rejection-feedback', { applicationId });
+      return res.data.feedback;
+    } catch (error) {
+      console.error("Failed to generate AI rejection feedback:", error);
+      throw error;
+    }
+  };
+
+  // Update application status (missing backend endpoint fallback)
+  const updateApplicationStatus = async (appId, status, feedback) => {
+
+  // Backend values -> Frontend values
+  const displayStatus =
+    status === "accepted"
+      ? "Shortlisted"
+      : status === "rejected"
+      ? "Rejected"
+      : "Reviewing";
+
+  // Backup current state (for rollback)
+  const previousApplications = applications;
+
+  // Optimistic UI Update
+  setApplications(prev =>
+    prev.map(app =>
+      app.id === appId
+        ? {
+            ...app,
+            status: displayStatus,
+            feedback,
+          }
+        : app
+    )
+  );
+
+  try {
+
+    const res = await api.put(
+      `/jobs/applications/${appId}/status`,
+      {
+        status,
+        feedback,
+      }
+    );
+
+    return res.data;
+
+  } catch (error) {
+
+    console.error("Failed to update application status:", error);
+
+    // Rollback UI if backend update fails
+    setApplications(previousApplications);
+
+    throw error;
+  }
   };
 
   return (
@@ -302,16 +591,24 @@ export const AuthProvider = ({ children }) => {
       logout,
       updateProfile,
       applyToJob,
+      withdrawApplication,
       uploadResume,
+      uploadAvatar,
+      deleteResume,
+      deleteAvatar,
       savedJobs,
       toggleSaveJob,
-      loginWithGoogle,
       isLoggedIn: !!user,
       isEmployer: user?.role === 'Employer',
       jobs,
       applications,
       postJob,
-      updateApplicationStatus
+      updateJob,
+      deleteJob,
+      uploadJobLogo,
+      updateApplicationStatus,
+      getAIRejectionFeedback,
+      loading
     }}>
       {children}
     </AuthContext.Provider>

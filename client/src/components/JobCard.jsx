@@ -1,14 +1,17 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Bookmark, MapPin, DollarSign, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getCompanyLogo } from '../utils/logos';
 
+import Swal from 'sweetalert2';
+
 export const JobCard = ({ job, onApply }) => {
+  const navigate = useNavigate();
   const { savedJobs, toggleSaveJob, applyToJob, user } = useAuth();
   const isSaved = savedJobs.includes(job.id);
-  const isApplied = user?.applications.some(app => app.jobId === job.id);
+  const isApplied = user?.applications.some(app => app.jobId === job.id) || false;
 
 
   const getMatchColor = (score) => {
@@ -17,24 +20,83 @@ export const JobCard = ({ job, onApply }) => {
     return 'from-amber-500 to-orange-500 text-white';
   };
 
-  const handleApply = (e) => {
+  const calculateMatchPercentage = () => {
+    if (!user || !user.skills || user.skills.length === 0 || !job.skills || job.skills.length === 0) {
+      return null;
+    }
+    const userSkillsSet = new Set(user.skills.map(skill => skill.toLowerCase().trim()));
+    let matchedCount = 0;
+    job.skills.forEach(skill => {
+      if (userSkillsSet.has(skill.toLowerCase().trim())) {
+        matchedCount++;
+      }
+    });
+    return Math.round((matchedCount / job.skills.length) * 100);
+  };
+
+  const matchScore = job.aiMatch !== undefined && job.aiMatch !== null ? job.aiMatch : calculateMatchPercentage();
+
+  const handleApply = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     if (isApplied) return;
-    applyToJob(job.id, job.title, job.company);
-    if (onApply) onApply(job);
+
+    const { value: coverLetter } = await Swal.fire({
+      title: 'Apply for this Role',
+      input: 'textarea',
+      inputLabel: 'Short Cover Letter (Optional)',
+      inputPlaceholder: 'Introduce yourself and tell the recruiter why you are a great fit...',
+      showCancelButton: true,
+      confirmButtonText: 'Submit Application',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#4f46e5',
+      cancelButtonColor: '#64748b',
+      reverseButtons: true,
+    });
+
+    if (coverLetter !== undefined) {
+      try {
+        await applyToJob(job.id, coverLetter || '');
+        Swal.fire({
+          icon: 'success',
+          title: 'Applied!',
+          text: 'Your application has been submitted successfully.',
+          confirmButtonColor: '#4f46e5',
+          timer: 1800,
+          showConfirmButton: false,
+        });
+        if (onApply) onApply(job);
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Application Failed',
+          text: err?.response?.data?.message || 'Something went wrong.',
+          confirmButtonColor: '#4f46e5',
+        });
+      }
+    }
   };
 
   return (
     <motion.div
+      onClick={() => navigate(`/jobs/${job.id}`)}
       whileHover={{ y: -4 }}
-      className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 glass-card-hover relative"
+      className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 glass-card-hover relative cursor-pointer"
     >
       {/* Header (Company Logo, Title, Saved) */}
       <div className="flex items-start justify-between">
         <div className="flex space-x-3.5">
           {/* Company Logo */}
           <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-2 flex-shrink-0">
-            {getCompanyLogo(job.company, "w-8 h-8")}
+          {job.companyLogo?.url ? (
+            <img
+              src={job.companyLogo.url}
+              alt={job.company}
+              className="w-8 h-8 object-contain"
+            />
+          ) : (
+          getCompanyLogo(job.company, "w-8 h-8")
+          )}
           </div>
           <div>
             <Link to={`/jobs/${job.id}`} className="font-bold text-base text-slate-800 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors block leading-tight">
@@ -45,7 +107,10 @@ export const JobCard = ({ job, onApply }) => {
         </div>
 
         <button
-          onClick={() => toggleSaveJob(job.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleSaveJob(job.id);
+          }}
           className={`p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
             isSaved ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'
           }`}
@@ -56,11 +121,11 @@ export const JobCard = ({ job, onApply }) => {
       </div>
 
       {/* AI Match Badge */}
-      {job.aiMatch && (
+      {matchScore !== null && (
         <div className="mt-3">
-          <span className={`inline-flex items-center text-[10px] font-bold px-2.5 py-1 rounded-full bg-gradient-to-r ${getMatchColor(job.aiMatch)} shadow-sm`}>
+          <span className={`inline-flex items-center text-[10px] font-bold px-2.5 py-1 rounded-full bg-gradient-to-r ${getMatchColor(matchScore)} shadow-sm`}>
             <Sparkles size={10} className="mr-1 fill-current" />
-            {job.aiMatch}% AI Match
+            {matchScore}% AI Match
           </span>
         </div>
       )}

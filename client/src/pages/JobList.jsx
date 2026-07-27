@@ -35,7 +35,15 @@ export const JobList = () => {
   };
 
   // Categories list starting with 'All'
-  const categoriesList = ['All', ...new Set(jobs.map(job => job.category))];
+  const categoriesList = [
+    'All',
+    'Software Development',
+    'Artificial Intelligence & ML',
+    'Data Science & Analytics',
+    'Product Management',
+    'Design & UX/UI',
+    'Marketing & Growth'
+  ];
   const jobTypesList = ['All', 'Full-time', 'Part-time', 'Remote', 'Contract'];
 
   // Handle live searches
@@ -49,7 +57,38 @@ export const JobList = () => {
       job.location.toLowerCase().includes(location.toLowerCase());
 
     const matchCategory = 
-      category === 'All' || job.category === category;
+      category === 'All' || 
+      (job.category && job.category.toLowerCase() === category.toLowerCase()) ||
+      (
+        category === 'Software Development' && 
+        (job.title.toLowerCase().match(/software|developer|engineer|react|node|js|java|python|backend|frontend|fullstack|web/) || 
+         job.skills.some(s => s.toLowerCase().match(/javascript|react|python|java|html|css|c\+\+|c#/)))
+      ) ||
+      (
+        category === 'Artificial Intelligence & ML' && 
+        (job.title.toLowerCase().match(/ai|ml|machine|learning|intelligence|deep|neural|nlp/) || 
+         job.skills.some(s => s.toLowerCase().match(/pytorch|tensorflow|keras|scikit|openai|llm|nlp/)))
+      ) ||
+      (
+        category === 'Data Science & Analytics' && 
+        (job.title.toLowerCase().match(/data|analyst|analytics|science|sql|bi/) || 
+         job.skills.some(s => s.toLowerCase().match(/sql|pandas|numpy|tableau|powerbi|excel/)))
+      ) ||
+      (
+        category === 'Product Management' && 
+        (job.title.toLowerCase().match(/product|manager|pm|scrum|agile/) || 
+         job.skills.some(s => s.toLowerCase().match(/agile|scrum|product|roadmap/)))
+      ) ||
+      (
+        category === 'Design & UX/UI' && 
+        (job.title.toLowerCase().match(/design|ux|ui|graphics|illustrator|figma/) || 
+         job.skills.some(s => s.toLowerCase().match(/figma|adobe|photoshop|illustrator|sketch/)))
+      ) ||
+      (
+        category === 'Marketing & Growth' && 
+        (job.title.toLowerCase().match(/marketing|growth|seo|sales|ads|social/) || 
+         job.skills.some(s => s.toLowerCase().match(/seo|ads|google analytics|marketing|sales/)))
+      );
 
     const matchType = 
       jobType === 'All' || job.type === jobType;
@@ -63,7 +102,7 @@ export const JobList = () => {
   };
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen w-full">
       {/* Background Mesh Glows */}
       <div className="bg-glow bg-glow-right"></div>
       <div className="bg-glow bg-glow-left"></div>

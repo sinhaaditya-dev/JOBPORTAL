@@ -1,7 +1,6 @@
 import { useState, useEffect, Fragment } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { mockJobs, mockNotifications } from '../data/mockData';
 import { Sidebar } from '../components/Sidebar';
 import { EmployerDashboard } from './EmployerDashboard';
 import { ATSScoreCard } from '../components/ATSScoreCard';
@@ -18,23 +17,85 @@ import {
   Bell, 
   Clock, 
   Edit3,
+  LogOut,
   Bookmark,
   Sparkles,
   AlertTriangle
 } from 'lucide-react';
 import { getCompanyLogo } from '../utils/logos';
+import api from '../utils/api';
+
+const defaultNotifications = [
+  {
+    id: 'n1',
+    title: 'Recruiter Viewed Profile',
+    message: 'A recruiter viewed your engineering profile.',
+    time: '2 hours ago',
+    read: false,
+    type: 'view'
+  },
+  {
+    id: 'n2',
+    title: 'New AI Job Match',
+    message: 'We found a high compatibility match for your uploaded resume.',
+    time: '4 hours ago',
+    read: false,
+    type: 'match'
+  },
+  {
+    id: 'n3',
+    title: 'ATS Score Improved',
+    message: 'Your ATS score rose after parsing your skills and credentials.',
+    time: '1 day ago',
+    read: true,
+    type: 'ats'
+  }
+];
 
 export const Dashboard = () => {
-  const { user, savedJobs, updateProfile } = useAuth();
+  const { user, savedJobs, updateProfile, jobs, logout,loading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedApp, setExpandedApp] = useState(null);
   const navigate = useNavigate();
 
+  const [stats, setStats] = useState({
+    totalApplications: 0,
+    acceptedCount: 0,
+    pendingCount: 0,
+    rejectedCount: 0,
+    savedJobs: 0
+  });
+
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-    }
-  }, [user, navigate]);
+    if (loading || !user || user.role === 'Employer') return;
+    
+    api.get('/dashboard/student/stats')
+      .then(res => {
+        if (res.data && res.data.dashboard) {
+          setStats(res.data.dashboard);
+        }
+      })
+      .catch(err => console.error("Error fetching student stats:", err));
+  }, [loading, user]);
+
+  useEffect(() => {
+
+  // Wait until AuthContext finishes loading
+  if (loading) return;
+
+  if (!user) {
+    navigate("/login", { replace: true });
+  }
+
+}, [loading, user, navigate]);
+
+  if (loading) {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+          Loading...
+        </div>
+      );
+  }
 
   if (!user) {
     return null;
@@ -45,10 +106,10 @@ export const Dashboard = () => {
   }
 
   // Get matching jobs (AI match >= 80)
-  const matchedJobs = mockJobs.filter(job => job.aiMatch && job.aiMatch >= 80);
+  const matchedJobs = jobs.filter(job => job.aiMatch && job.aiMatch >= 80);
 
   // Get saved jobs details
-  const savedJobsDetails = mockJobs.filter(job => savedJobs.includes(job.id));
+  const savedJobsDetails = jobs.filter(job => savedJobs.includes(job.id));
 
   const hasResume = !!user.resumeName;
   const hasSkills = user.skills && user.skills.length > 0;
@@ -75,7 +136,7 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen w-full">
       {/* Mesh Glow Backgrounds */}
       <div className="bg-glow bg-glow-right"></div>
       <div className="bg-glow bg-glow-left"></div>
@@ -133,15 +194,55 @@ export const Dashboard = () => {
                     </div>
                   </div>
                   
-                  <button className="flex items-center space-x-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-250 dark:border-slate-700 cursor-pointer transition-colors">
-                    <Edit3 size={12} />
-                    <span>Edit Profile</span>
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button 
+                      onClick={() => navigate('/dashboard/profile/edit')}
+                      className="flex items-center space-x-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-250 dark:border-slate-700 cursor-pointer transition-colors"
+                    >
+                      <Edit3 size={12} />
+                      <span>Edit Profile</span>
+                    </button>
+                    <button 
+                      onClick={() => {
+                        logout();
+                        navigate('/');
+                      }}
+                      className="flex items-center space-x-1.5 px-4 py-2 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 cursor-pointer transition-colors"
+                    >
+                      <LogOut size={12} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 text-left">
+                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Total Applications</span>
+                    <span className="text-2xl font-black text-slate-800 dark:text-white block">{stats.totalApplications}</span>
+                  </div>
+                  <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 text-left">
+                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Shortlisted</span>
+                    <span className="text-2xl font-black text-green-600 dark:text-green-500 block">{stats.acceptedCount}</span>
+                  </div>
+                  <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 text-left">
+                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Under Review</span>
+                    <span className="text-2xl font-black text-blue-600 dark:text-blue-500 block">{stats.pendingCount}</span>
+                  </div>
+                  <div className="glass-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1 text-left">
+                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Rejected</span>
+                    <span className="text-2xl font-black text-red-600 dark:text-red-500 block">{stats.rejectedCount}</span>
+                  </div>
                 </div>
 
                 {/* ATS Widget Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <ATSScoreCard score={user.atsScore} skills={user.skills} />
+                  <ATSScoreCard 
+                    score={user.atsScore} 
+                    skills={user.skills} 
+                    recommendedSkills={user.recommendedSkills} 
+                    suggestions={user.suggestions} 
+                  />
                   
                   {/* Quick Profile Stats */}
                   <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-5">
@@ -246,19 +347,30 @@ export const Dashboard = () => {
                                 <td className="px-4 py-4 text-xs font-medium">{app.dateApplied}</td>
                                 <td className="px-4 py-4">{getStatusBadge(app.status)}</td>
                                 <td className="px-4 py-4 text-right">
-                                  {app.status === 'Rejected' ? (
-                                    <button
-                                      onClick={() => toggleExpand(app.id)}
-                                      className="text-xs font-bold text-red-500 hover:text-red-650 hover:underline flex items-center justify-end ml-auto cursor-pointer"
-                                    >
-                                      <span>AI Audit Feedback</span>
-                                      {expandedApp === app.id ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
-                                    </button>
-                                  ) : app.status === 'Shortlisted' ? (
-                                    <span className="text-xs font-semibold text-green-500">Interview Scheduled</span>
-                                  ) : (
-                                    <span className="text-xs font-semibold text-slate-400">Under Review</span>
-                                  )}
+                                  <div className="flex items-center justify-end gap-3">
+                                    {app.status === 'Rejected' ? (
+                                      <button
+                                        onClick={() => toggleExpand(app.id)}
+                                        className="text-xs font-bold text-red-500 hover:text-red-650 hover:underline flex items-center cursor-pointer"
+                                      >
+                                        <span>AI Audit Feedback</span>
+                                        {expandedApp === app.id ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
+                                      </button>
+                                    ) : app.status === 'Shortlisted' ? (
+                                      <span className="text-xs font-semibold text-green-500">Interview Scheduled</span>
+                                    ) : (
+                                      <span className="text-xs font-semibold text-slate-400">Under Review</span>
+                                    )}
+                                    {app.coverLetter && (
+                                      <button
+                                        onClick={() => toggleExpand(app.id + '-cover')}
+                                        className="text-xs font-bold text-indigo-500 hover:text-indigo-650 hover:underline flex items-center cursor-pointer"
+                                      >
+                                        <span>View Cover Letter</span>
+                                        {expandedApp === (app.id + '-cover') ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
+                                      </button>
+                                    )}
+                                  </div>
                                 </td>
                               </tr>
                               
@@ -274,13 +386,29 @@ export const Dashboard = () => {
                                       <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
                                         <p className="font-semibold text-slate-700 dark:text-slate-350">Reason & Deficiencies Identified:</p>
                                         <pre className="font-sans text-[11px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-lg whitespace-pre-line leading-relaxed">
-                                          {typeof app.feedback === 'object' ? app.feedback.reason : app.feedback}
+                                          {(app.feedback && typeof app.feedback === 'object') ? app.feedback.reason : (app.feedback || '')}
                                         </pre>
                                       </div>
                                       <div className="text-[10px] text-slate-400 flex items-center space-x-1 pt-1.5">
                                         <HelpCircle size={10} className="text-slate-400" />
                                         <span>Action: Upload an optimized copy targeting these criteria in the <strong>ATS Resume tab</strong>.</span>
                                       </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+
+                              {/* Expandable Cover Letter */}
+                              {app.coverLetter && expandedApp === (app.id + '-cover') && (
+                                <tr>
+                                  <td colSpan="4" className="px-4 py-3 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
+                                    <div className="p-3 space-y-1.5 text-left">
+                                      <div className="text-xs font-bold text-indigo-650 dark:text-indigo-400">
+                                        <span>Your Submitted Cover Letter</span>
+                                      </div>
+                                      <pre className="font-sans text-xs text-slate-600 dark:text-slate-350 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg whitespace-pre-wrap leading-relaxed">
+                                        {app.coverLetter}
+                                      </pre>
                                     </div>
                                   </td>
                                 </tr>
@@ -373,7 +501,12 @@ export const Dashboard = () => {
                   <p className="text-xs text-slate-400">Optimize and scan your resume drafts dynamically</p>
                 </div>
 
-                <ATSScoreCard score={user.atsScore} skills={user.skills} />
+                <ATSScoreCard 
+                  score={user.atsScore} 
+                  skills={user.skills} 
+                  recommendedSkills={user.recommendedSkills} 
+                  suggestions={user.suggestions} 
+                />
 
                 <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4">
                   <FileText size={32} className="mx-auto text-indigo-500" />
@@ -420,7 +553,7 @@ export const Dashboard = () => {
                         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3">
                           <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Feedback Breakdown:</span>
                           <pre className="font-sans text-xs text-slate-600 dark:text-slate-350 whitespace-pre-line leading-relaxed">
-                            {typeof app.feedback === 'object' ? app.feedback.reason : app.feedback}
+                            {(app.feedback && typeof app.feedback === 'object') ? app.feedback.reason : (app.feedback || '')}
                           </pre>
                         </div>
 
@@ -456,7 +589,7 @@ export const Dashboard = () => {
                 </div>
 
                 <div className="glass-card rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-850">
-                  {mockNotifications.map((notif) => (
+                  {defaultNotifications.map((notif) => (
                     <div 
                       key={notif.id} 
                       className={`p-4 flex items-start space-x-3.5 transition-colors ${
@@ -470,7 +603,7 @@ export const Dashboard = () => {
                       </div>
                       <div className="flex-1 space-y-1">
                         <div className="flex justify-between items-center">
-                          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{notif.title}</h4>
+                           <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{notif.title}</h4>
                           <span className="text-[10px] text-slate-400 flex items-center">
                             <Clock size={10} className="mr-1" />
                             {notif.time}

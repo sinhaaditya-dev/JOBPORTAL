@@ -248,10 +248,16 @@ export const ResumeUpload = () => {
           clearInterval(interval);
           setAnalyzing(false);
 
-          const msg =
-            err?.response?.data?.message ||
-            err.message ||
-            "Failed to process resume. Please try again.";
+          let msg = "Failed to process resume. Please try again.";
+          if (err?.response?.status === 401) {
+            msg = "Your login session has expired. Please log in again to upload your resume.";
+          } else if (err?.code === "ECONNABORTED" || err?.message?.includes("timeout")) {
+            msg = "The upload timed out. Please check your internet connection and try again.";
+          } else if (err?.response?.data?.message) {
+            msg = err.response.data.message;
+          } else if (err?.message) {
+            msg = err.message;
+          }
 
           Swal.fire({
             icon: "error",

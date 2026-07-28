@@ -28,7 +28,7 @@ const analyzeResume = async (resumeText) => {
     // Step 2
     // Send Prompt To Gemini
     const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: "gemini-2.5-flash",
         contents: prompt,
         config: {
             responseMimeType: "application/json"
@@ -45,7 +45,22 @@ const analyzeResume = async (resumeText) => {
     //Response will come in the form of string,so we convert into JSON
     //String -> object because frontend requires object 
     const cleanResult = result.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-    const aiReport = JSON.parse(cleanResult);
+    let aiReport;
+    try {
+        aiReport = JSON.parse(cleanResult);
+    } catch (error) {
+        console.error("Failed to parse Gemini JSON response:", error);
+        // Fallback structure
+        aiReport = {
+            atsScore: 70,
+            summary: "Unable to analyze thoroughly due to a processing error. Please review manually.",
+            skills: [],
+            missingSkills: [],
+            strengths: [],
+            weaknesses: [],
+            recommendations: ["Ensure your resume is cleanly formatted and easy for ATS systems to parse."]
+        };
+    }
     // Step 5
     // Return
     return aiReport;
@@ -66,7 +81,7 @@ const generateAIRejectionFeedback = async (jobTitle, jobDescription, candidateNa
                     Format the output directly as raw text that can be copied/pasted into a rejection letter. Do not include markdown code block syntax (like \`\`\`), do not include subject line or header, just start directly with the greeting or feedback message.`;
 
     const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: "gemini-2.5-flash",
         contents: prompt
     });
 

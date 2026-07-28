@@ -317,10 +317,15 @@ export const AuthProvider = ({ children }) => {
       });
 
       // Immediately trigger AI analysis for ATS report
-      const aiRes = await api.post('/ai/analyze');
+      let aiReport = null;
+      try {
+        const aiRes = await api.post('/ai/analyze');
+        aiReport = aiRes?.data?.aiReport;
+      } catch (aiErr) {
+        console.warn("AI analysis failed or timed out during upload, falling back:", aiErr);
+      }
 
       const resumeObj = res.data.resume;
-      const aiReport = aiRes?.data?.aiReport;
 
       setUser(prev => {
         if (!prev) return null;

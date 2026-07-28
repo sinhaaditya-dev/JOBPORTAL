@@ -22,7 +22,7 @@ const uploadResume = async (req, res) => {
 
         {
             folder: "jobportal/resumes",
-            resource_type: "auto",
+            resource_type: "raw",
             use_filename: true,
             unique_filename: true
         },

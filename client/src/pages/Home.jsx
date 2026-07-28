@@ -52,7 +52,8 @@ export const Home = () => {
       <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden py-24 md:py-32 mt-[-4rem] bg-transparent border-b border-slate-100/50 dark:border-zinc-900/50">
         
         {/* Subtle Background Glow Spheres */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 dark:bg-indigo-600/10 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse" />
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-500/10 dark:bg-violet-600/10 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-500/10 dark:bg-cyan-600/10 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse" />
 
         {/* Hero Content Container */}
         <motion.div
@@ -79,7 +80,7 @@ export const Home = () => {
               className="text-4xl sm:text-6xl md:text-7xl font-semibold tracking-[-2px] text-slate-900 dark:text-white leading-tight"
             >
               Find Your Dream Job <br />
-              <span className="text-gradient">
+              <span className="text-gradient animate-text-glow-light">
                 With AI Precision
               </span>
             </motion.h1>
@@ -96,7 +97,7 @@ export const Home = () => {
           <motion.form
             variants={itemFadeUp}
             onSubmit={handleSearch}
-            className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 p-4 rounded-3xl shadow-lg flex flex-col md:flex-row gap-4 max-w-4xl mx-auto text-left transition-all duration-300 hover:shadow-xl dark:hover:border-zinc-700"
+            className="bg-white dark:bg-[#0B0B0C] border border-slate-200 dark:border-zinc-800/80 p-4 rounded-3xl shadow-lg flex flex-col md:flex-row gap-4 max-w-4xl mx-auto text-left transition-all duration-300 hover:shadow-xl dark:hover:border-zinc-700 dark-box-shadow"
           >
             {/* Job Title Input */}
             <div className="flex-1 flex items-center px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 focus-within:border-slate-400 dark:focus-within:border-zinc-600 transition-colors space-x-3">
@@ -143,7 +144,7 @@ export const Home = () => {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
               transition={springPreset}
-              className="w-full md:w-auto px-8 py-3 bg-slate-950 hover:bg-black dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-black rounded-2xl font-bold text-sm shadow-md transition-colors flex items-center justify-center space-x-2 cursor-pointer"
+              className="w-full md:w-auto px-8 py-3 bg-slate-950 hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-zinc-100 rounded-2xl font-bold text-sm shadow-md transition-colors flex items-center justify-center space-x-2 cursor-pointer btn-apply-glow"
             >
               <Icons.Search size={16} />
               <span>Search</span>
@@ -194,10 +195,13 @@ export const Home = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={viewportOnce}
           transition={{ duration: 0.6 }}
-          className="p-8 rounded-3xl border border-slate-200 dark:border-zinc-800 relative overflow-hidden bg-slate-50 dark:bg-zinc-900/90 shadow-sm hover:shadow-md transition-shadow group"
+          className="p-8 rounded-3xl border border-slate-200 dark:border-zinc-800 relative overflow-hidden bg-slate-50 dark:bg-[#0B0B0C] shadow-sm hover:shadow-md transition-shadow group dark-box-shadow"
         >
-          {/* Subtle Ambient Background Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          {/* Subtle Ambient Background Gradient like ApexHire */}
+          <div className="absolute inset-0 bg-transparent pointer-events-none overflow-hidden -z-10">
+            <div className="absolute top-[-30%] left-[-20%] w-[300px] h-[300px] bg-purple-500/5 dark:bg-violet-600/15 rounded-full blur-3xl" />
+            <div className="absolute bottom-[-30%] right-[-10%] w-[300px] h-[300px] bg-indigo-500/5 dark:bg-cyan-600/15 rounded-full blur-3xl" />
+          </div>
 
           <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="space-y-3 text-center md:text-left">
@@ -208,7 +212,7 @@ export const Home = () => {
                 ATS Optimizer
               </motion.span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                Not getting interviews? Let AI audit your CV.
+                Not getting interviews? <span className="text-gradient animate-text-glow-light">Let AI audit your CV.</span>
               </h2>
               <p className="text-sm text-slate-600 dark:text-zinc-400 max-w-xl font-medium">
                 Get parsed skills reports, missing requirements checklists, and score comparisons instantly.
@@ -222,7 +226,7 @@ export const Home = () => {
             >
               <Link
                 to="/resume"
-                className="px-6 py-3.5 bg-slate-950 hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-zinc-100 rounded-xl font-bold text-sm shadow-md transition-colors flex items-center space-x-2 flex-shrink-0 cursor-pointer"
+                className="px-6 py-3.5 bg-slate-950 hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-zinc-100 rounded-xl font-bold text-sm shadow-md transition-colors flex items-center space-x-2 flex-shrink-0 cursor-pointer btn-apply-glow"
               >
                 <Sparkles size={16} className="text-indigo-400 dark:text-indigo-600 animate-pulse" />
                 <span>Verify Resume Free</span>
@@ -259,7 +263,7 @@ export const Home = () => {
               <motion.div key={cat.id} variants={itemScaleUp}>
                 <Link
                   to={`/jobs?category=${encodeURIComponent(cat.name)}`}
-                  className="group block bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-slate-200 dark:border-zinc-800/80 flex items-start space-x-4 hover:border-slate-400 dark:hover:border-zinc-600 transition-all cursor-pointer shadow-sm hover:shadow-md transform hover:-translate-y-1"
+                  className="group block bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-slate-200 dark:border-zinc-800/80 flex items-start space-x-4 hover:border-slate-400 dark:hover:border-zinc-600 transition-all cursor-pointer shadow-sm hover:shadow-md transform hover:-translate-y-1 dark-box-shadow"
                 >
                   <div className="p-3 bg-slate-100 dark:bg-zinc-800 rounded-xl flex-shrink-0 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/40 transition-colors">
                     {renderCategoryIcon(cat.icon)}

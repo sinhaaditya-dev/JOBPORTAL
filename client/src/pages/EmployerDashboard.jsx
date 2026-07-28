@@ -447,7 +447,7 @@ export const EmployerDashboard = () => {
         {/* Header Block */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-850 p-2.5 flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md bg-white border border-slate-200/60 dark:border-slate-850 p-2.5 flex-shrink-0">
               {getCompanyLogo(employerCompany, "w-8 h-8", user.avatar || (myJobs.length > 0 ? myJobs[0].companyLogo?.url : ""))}
             </div>
             <div>

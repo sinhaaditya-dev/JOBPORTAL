@@ -69,6 +69,12 @@ export const ATSScoreCard = ({ score = 0, skills = [], recommendedSkills = [], s
             {/* Radial SVG Gauge */}
             <div className="relative flex items-center justify-center w-36 h-36">
               <svg className="w-full h-full transform -rotate-90">
+                <defs>
+                  <linearGradient id="ats-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#a855f7" />      {/* Violet/Purple */}
+                    <stop offset="100%" stopColor="#fb7185" />    {/* Peach/Rose/Coral */}
+                  </linearGradient>
+                </defs>
                 {/* Background circle */}
                 <circle
                   cx="72"
@@ -82,7 +88,7 @@ export const ATSScoreCard = ({ score = 0, skills = [], recommendedSkills = [], s
                   cx="72"
                   cy="72"
                   r={radius}
-                  className={`fill-none ${getScoreColor(score)}`}
+                  className={`fill-none ats-gauge-circle ${getScoreColor(score)}`}
                   strokeWidth="10"
                   strokeDasharray={circumference}
                   initial={{ strokeDashoffset: circumference }}
@@ -105,9 +111,9 @@ export const ATSScoreCard = ({ score = 0, skills = [], recommendedSkills = [], s
                   {skills.map((skill) => (
                     <span
                       key={skill}
-                      className="inline-flex items-center text-[10px] font-medium bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-900/30"
+                      className="inline-flex items-center text-[10px] font-medium bg-indigo-50 dark:bg-emerald-500/10 text-indigo-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full border border-indigo-100 dark:border-emerald-500/20"
                     >
-                      <CheckCircle2 size={10} className="mr-1 text-indigo-500" />
+                      <CheckCircle2 size={10} className="mr-1 text-indigo-500 dark:text-emerald-500" />
                       {skill}
                     </span>
                   ))}

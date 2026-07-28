@@ -335,7 +335,7 @@ export const Dashboard = () => {
                                 <td className="px-4 py-4 font-bold text-slate-800 dark:text-slate-200">
                                   <div className="flex items-center space-x-3">
                                     {/* Company Logo */}
-                                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shadow-sm bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-1.5 flex-shrink-0">
+                                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shadow-sm bg-white border border-slate-200/60 dark:border-slate-800 p-1.5 flex-shrink-0">
                                       {getCompanyLogo(app.company, "w-6 h-6")}
                                     </div>
                                     <div>
@@ -537,7 +537,7 @@ export const Dashboard = () => {
                         <div className="flex justify-between items-start">
                           <div className="flex items-center space-x-3">
                             {/* Company Logo */}
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-1.5 flex-shrink-0">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm bg-white border border-slate-200/60 dark:border-slate-800 p-1.5 flex-shrink-0">
                               {getCompanyLogo(app.company, "w-7 h-7")}
                             </div>
                             <div>

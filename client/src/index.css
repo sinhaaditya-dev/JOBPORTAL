@@ -26,22 +26,62 @@
     --glass-border: rgba(99, 102, 241, 0.08);
     /* subtle indigo borders */
     --glow-opacity: 0.04;
+    --glow-color: 99 102 241;
+    --glow-color-secondary: 168 85 247;
   }
 
   .dark {
     /* Dark Mode */
     --bg-base: 0 0 0;
     /* pure black */
-    --bg-surface: 10 10 10;
+    --bg-surface: 11 11 12; /* matching #0B0B0C from ApexHire */
     --text-base: 161 161 170;
     /* zinc-400 */
     --text-heading: 244 244 245;
     /* zinc-100 */
     --border-color: 24 24 27;
     /* zinc-900 */
-    --glass-bg: rgba(10, 10, 10, 0.65);
+    --glass-bg: rgba(11, 11, 12, 0.65);
     --glass-border: rgba(255, 255, 255, 0.05);
     --glow-opacity: 0.12;
+    --glow-color: 124 58 237; /* ApexHire neon purple/violet shadow */
+    --glow-color-secondary: 6 182 212; /* ApexHire neon cyan secondary shadow */
+
+    /* Override primary colors to Electric Blue in dark mode */
+    --primary: 37 99 235; /* Blue-600 */
+    --primary-hover: 29 78 216; /* Blue-700 */
+
+    /* Override Tailwind Indigo colors to Blue in dark mode */
+    --color-indigo-50: var(--color-blue-50);
+    --color-indigo-100: var(--color-blue-100);
+    --color-indigo-200: var(--color-blue-200);
+    --color-indigo-300: var(--color-blue-300);
+    --color-indigo-400: var(--color-blue-400);
+    --color-indigo-500: var(--color-blue-500);
+    --color-indigo-600: var(--color-blue-600);
+    --color-indigo-650: #1d4ed8;
+    --color-indigo-700: var(--color-blue-700);
+    --color-indigo-750: #1e40af;
+    --color-indigo-800: var(--color-blue-800);
+    --color-indigo-900: var(--color-blue-900);
+    --color-indigo-950: var(--color-blue-950);
+
+    /* Override Slate neutral colors to Zinc for absolute premium consistency */
+    --color-slate-50: var(--color-zinc-50);
+    --color-slate-100: var(--color-zinc-100);
+    --color-slate-200: var(--color-zinc-200);
+    --color-slate-300: var(--color-zinc-300);
+    --color-slate-400: var(--color-zinc-400);
+    --color-slate-500: var(--color-zinc-500);
+    --color-slate-600: var(--color-zinc-600);
+    --color-slate-700: var(--color-zinc-700);
+    --color-slate-800: var(--color-zinc-800);
+    --color-slate-850: #18181b;
+    --color-slate-900: #0b0b0c; /* Deep black surface background matching apexhire */
+    --color-slate-950: #09090b; /* Even darker black */
+
+    /* Map white color to a soft, eye-soothing off-white (Zinc-100) in dark mode */
+    --color-white: #f4f4f5;
   }
 
   html,
@@ -71,9 +111,11 @@
 }
 
 .dark .text-gradient {
-  background: linear-gradient(135deg, #515c5c 0%, #313437 50%, #7d7a85 100%);
+  background: linear-gradient(to right, #8b5cf6, #06b6d4, #ffffff, #8b5cf6);
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  animation: shimmerText 5s ease infinite;
 }
 
 .glass-card {
@@ -90,8 +132,28 @@
 
 .glass-card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px 0 rgba(99, 102, 241, var(--glow-opacity));
-  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 12px 40px 0 rgba(var(--glow-color), var(--glow-opacity));
+  border-color: rgba(var(--glow-color), 0.3);
+}
+
+/* Custom premium box shadow matching the screenshot for dark theme only */
+.dark .glass-card,
+.dark .dark-box-shadow {
+  box-shadow: 
+    0 10px 30px -10px rgba(0, 0, 0, 0.7),
+    0 1px 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 0 50px -10px rgba(6, 182, 212, 0.12),
+    0 15px 35px -10px rgba(37, 99, 235, 0.18) !important;
+}
+
+.dark .glass-card-hover:hover,
+.dark .dark-box-shadow:hover {
+  box-shadow: 
+    0 20px 40px -15px rgba(0, 0, 0, 0.85),
+    0 1px 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 0 60px -5px rgba(6, 182, 212, 0.18),
+    0 20px 40px -5px rgba(37, 99, 235, 0.25) !important;
+  border-color: rgba(37, 99, 235, 0.3) !important;
 }
 
 /* Glow Background Effects */
@@ -100,7 +162,6 @@
   width: 500px;
   height: 500px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.05) 50%, rgba(0, 0, 0, 0) 70%);
   filter: blur(60px);
   pointer-events: none;
   z-index: 0;
@@ -109,11 +170,13 @@
 .bg-glow-right {
   top: -10%;
   right: -10%;
+  background: radial-gradient(circle, rgba(var(--glow-color), 0.15) 0%, rgba(var(--glow-color-secondary), 0.05) 50%, rgba(0, 0, 0, 0) 70%);
 }
 
 .bg-glow-left {
   bottom: -10%;
   left: -10%;
+  background: radial-gradient(circle, rgba(var(--glow-color-secondary), 0.15) 0%, rgba(var(--glow-color), 0.05) 50%, rgba(0, 0, 0, 0) 70%);
 }
 
 /* Custom Scrollbar */
@@ -196,12 +259,12 @@
 }
 
 .dark .bg-mesh-gradient {
-  background-color: #0a0a0a;
+  background-color: #000000; /* pure black to match apexhire */
   background-image:
-    radial-gradient(at 0% 100%, hsla(339, 80%, 12%, 0.25) 0%, transparent 60%),
-    radial-gradient(at 0% 0%, hsla(205, 80%, 12%, 0.25) 0%, transparent 60%),
-    radial-gradient(at 100% 0%, hsla(271, 80%, 12%, 0.25) 0%, transparent 60%),
-    radial-gradient(at 100% 100%, hsla(50, 80%, 12%, 0.25) 0%, transparent 60%);
+    radial-gradient(at 0% 100%, hsla(271, 80%, 45%, 0.12) 0%, transparent 60%), /* Violet */
+    radial-gradient(at 0% 0%, hsla(192, 85%, 45%, 0.10) 0%, transparent 60%),   /* Cyan */
+    radial-gradient(at 100% 0%, hsla(271, 80%, 45%, 0.12) 0%, transparent 60%), /* Violet */
+    radial-gradient(at 100% 100%, hsla(192, 85%, 45%, 0.10) 0%, transparent 60%); /* Cyan */
 }
 
 @keyframes slide-in {
@@ -218,4 +281,109 @@
 
 .animate-slide-in {
   animation: slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideRight {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: 0% center;
+  }
+}
+
+/* Premium text shimmer animation (gradient shifts left to right seamlessly, size remains static) */
+.animate-text-glow-light {
+  background: linear-gradient(to right, rgb(138, 45, 148) 0%, #a855f7 25%, #4f2f56 50%, #a855f7 75%, rgb(138, 45, 148) 100%);
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: slideRight 4s linear infinite;
+  will-change: background-position;
+}
+
+/* Ensure dark mode uses dark colors and normal left to right shimmer without transformations */
+.dark .animate-text-glow-light {
+  background-image: linear-gradient(to right, #8b5cf6 0%, #06b6d4 25%, #ffffff 50%, #06b6d4 75%, #8b5cf6 100%) !important;
+  background-size: 200% auto !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  animation: slideRight 4s linear infinite !important;
+  transform: none !important;
+  filter: none !important;
+  will-change: background-position !important;
+}
+
+/* Premium CTA Button matching ApexHire.ai */
+.btn-apply-glow {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .btn-apply-glow:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(59, 130, 246, 0.5) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 12px 30px 0 rgba(37, 99, 235, 0.65), 0 4px 12px 0 rgba(37, 99, 235, 0.35) !important;
+}
+
+.dark .btn-apply-glow:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%) !important;
+  box-shadow: 0 16px 36px 0 rgba(37, 99, 235, 0.8), 0 6px 16px 0 rgba(37, 99, 235, 0.45) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Global button glow for other primary buttons in dark mode */
+.dark button[class*="bg-indigo-"],
+.dark a[class*="bg-indigo-"],
+.dark button.bg-indigo-650,
+.dark a.bg-indigo-650 {
+  box-shadow: 0 10px 24px 0 rgba(37, 99, 235, 0.45), 0 4px 8px 0 rgba(37, 99, 235, 0.25) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.dark button[class*="bg-indigo-"]:hover:not(:disabled),
+.dark a[class*="bg-indigo-"]:hover,
+.dark button.bg-indigo-650:hover:not(:disabled),
+.dark a.bg-indigo-650:hover {
+  box-shadow: 0 14px 30px 0 rgba(37, 99, 235, 0.65), 0 6px 12px 0 rgba(37, 99, 235, 0.35) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+/* ATS Gauge Custom Gradient and Glow on Stroke in Dark Mode */
+.dark .ats-gauge-circle {
+  stroke: url(#ats-gradient) !important;
+  filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.6)) drop-shadow(0 0 2px rgba(251, 113, 133, 0.4));
+}
+
+/* Premium Form Input, Glass Dropdown, and Sidebar Overrides in Dark Mode */
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: rgba(59, 130, 246, 0.8) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Frosted glass dropdown overlays in dark mode */
+.dark .absolute.rounded-\[16px\],
+.dark .absolute.rounded-2xl {
+  background-color: rgba(11, 11, 12, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Sidebar active item capsule override in dark mode */
+.dark aside button.bg-indigo-500 {
+  border-left: 3px solid #3b82f6 !important;
+  border-radius: 0 12px 12px 0 !important;
+  background: rgba(37, 99, 235, 0.12) !important;
+  color: #3b82f6 !important;
+  box-shadow: none !important;
+}
+
+.dark aside button.bg-indigo-500 svg {
+  color: #3b82f6 !important;
 }

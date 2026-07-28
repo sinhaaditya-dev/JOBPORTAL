@@ -155,7 +155,7 @@ export const JobDetails = () => {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-start space-x-4">
                   {/* Company Logo */}
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-md bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-2.5 flex-shrink-0 mt-1">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-md bg-white border border-slate-200/60 dark:border-slate-800 p-2.5 flex-shrink-0 mt-1">
                     {getCompanyLogo(job.company, "w-9 h-9")}
                   </div>
                   <div className="space-y-1.5">
@@ -293,7 +293,7 @@ export const JobDetails = () => {
                 <button
                   onClick={handleApply}
                   disabled={isApplied}
-                  className={`w-full py-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center space-x-2 ${
+                  className={`w-full py-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center space-x-2 btn-apply-glow ${
                     isApplied
                       ? 'bg-slate-100 text-slate-450 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-800'
                       : 'bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-md hover:shadow-indigo-500/10 cursor-pointer'

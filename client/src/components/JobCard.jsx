@@ -15,9 +15,10 @@ export const JobCard = ({ job, onApply }) => {
 
 
   const getMatchColor = (score) => {
-    if (score >= 90) return 'from-emerald-500 to-teal-500 text-white';
-    if (score >= 80) return 'from-indigo-500 to-purple-500 text-white';
-    return 'from-amber-500 to-orange-500 text-white';
+    if (score >= 85) return 'from-emerald-500 to-teal-500 text-white';
+    if (score >= 45) return 'from-indigo-500 to-purple-500 text-white';
+    if (score >= 25) return 'from-amber-500 to-orange-500 text-white';
+    return 'from-red-400 to-rose-500 text-white';
   };
 
   const calculateMatchPercentage = () => {
@@ -87,15 +88,15 @@ export const JobCard = ({ job, onApply }) => {
       <div className="flex items-start justify-between">
         <div className="flex space-x-3.5">
           {/* Company Logo */}
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-2 flex-shrink-0">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm bg-white border border-slate-200/60 dark:border-slate-800 p-1 flex-shrink-0 overflow-hidden">
           {job.companyLogo?.url ? (
             <img
               src={job.companyLogo.url}
               alt={job.company}
-              className="w-8 h-8 object-contain"
+              className="w-full h-full object-contain"
             />
           ) : (
-          getCompanyLogo(job.company, "w-8 h-8")
+          getCompanyLogo(job.company, "w-full h-full object-contain")
           )}
           </div>
           <div>
@@ -171,7 +172,7 @@ export const JobCard = ({ job, onApply }) => {
         <button
           onClick={handleApply}
           disabled={isApplied}
-          className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all ${
+          className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all btn-apply-glow ${
             isApplied
               ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed'
               : 'bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-sm hover:shadow-indigo-500/10'

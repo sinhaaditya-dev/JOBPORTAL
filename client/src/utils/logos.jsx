@@ -13,11 +13,12 @@ export const getCompanyLogo = (companyOrJob = '', sizeClass = "w-6 h-6", logoUrl
   const url = typeof logoUrl === 'object' ? logoUrl?.url : logoUrl;
 
   if (url && typeof url === 'string' && url.trim() !== '') {
+    const objectFitClass = sizeClass.includes('object-') ? '' : 'object-contain';
     return (
       <img
         src={url}
         alt={companyName}
-        className={`${sizeClass} object-contain rounded-md flex-shrink-0`}
+        className={`${sizeClass} ${objectFitClass} rounded-md flex-shrink-0`}
         onError={(e) => {
           e.target.onerror = null;
           e.target.style.display = 'none';

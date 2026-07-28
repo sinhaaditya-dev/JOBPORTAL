@@ -27,48 +27,19 @@ const analyzeResumeController = async (req, res) => {
         }
         // Step 3
         // Download Resume
-        let resumeResponse;
-        try {
-            resumeResponse = await axios.get(user.resume.url, {
-                // arraybuffer because pdf files are binary files
-                responseType: "arraybuffer"
-            });
-        } catch (downloadErr) {
-            console.log("Resume Download Error:", downloadErr.message);
-            if (downloadErr.response?.status === 401 || downloadErr.message.includes("401")) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Unable to access stored resume file due to permission settings. Please re-upload your resume file and try again."
-                });
-            }
-            return res.status(500).json({
-                success: false,
-                message: "Failed to download resume file from storage: " + downloadErr.message
-            });
-        }
+        const resumeResponse = await axios.get(user.resume.url,{
+            //arraybuffer because pdf files are binary files,if we don't write arraybuffer the downloaded pdf will be corrupt//
+            responseType: "arraybuffer"
+        });
 
         // Step 4
         // Extract Text
-        let pdfData;
-        try {
-            pdfData = await pdf(resumeResponse.data);
-        } catch (parseErr) {
-            return res.status(400).json({
-                success: false,
-                message: "Failed to extract text from PDF resume: " + parseErr.message
-            });
-        }
-
+        const pdfData = await pdf(resumeResponse.data);
         const resumeText = pdfData.text;
-        if (!resumeText || !resumeText.trim()) {
-            return res.status(400).json({
-                success: false,
-                message: "Resume contains no readable text. Please upload a text-based PDF resume."
-            });
-        }
 
         // Step 5
         // Analyze Resume using Gemini
+        //send resume text to gemini and recieve structures JSON report from gemini
         const aiReport = await analyzeResume(resumeText);
 
         //STEP 6
@@ -81,15 +52,16 @@ const analyzeResumeController = async (req, res) => {
         //STEP 7
         //Save User
         await user.save();
-
         // Step 8
         // Response
         return res.status(200).json({
             success: true,
-            message: "Resume Analyzed Successfully",
-            aiReport: user.aiReport
+            message:"Resume Analyzed Successfully",
+            aiReport:user.aiReport
         });
-    }   catch(error){
+    }
+
+    catch(error){
 
         return res.status(500).json({
             success:false,

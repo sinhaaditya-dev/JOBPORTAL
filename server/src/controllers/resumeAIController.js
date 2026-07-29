@@ -75,6 +75,19 @@ const analyzeResumeController = async (req, res) => {
             recommendations: ["Ensure your resume is cleanly formatted and easy for ATS systems to parse."]
         };
         
+        try {
+            const user = await User.findById(req.user.id);
+            if (user) {
+                user.aiReport = {
+                    ...fallbackReport,
+                    updatedAt: new Date()
+                };
+                await user.save();
+            }
+        } catch (dbError) {
+            console.error("Failed to save fallback report to DB:", dbError);
+        }
+        
         return res.status(200).json({
             success: true,
             message: "Resume Uploaded, but AI Analysis encountered an issue.",

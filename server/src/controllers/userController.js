@@ -77,7 +77,6 @@ const uploadResume = async (req, res) => {
 
 
 
-
 //Delete Resume
 const deleteResume = async (req, res) => {
     try {
